@@ -30,6 +30,16 @@ const Auth = () => {
     if (!loading && user) nav("/", { replace: true });
   }, [user, loading, nav]);
 
+  const fillDemo = (role: "admin" | "guru" | "kantin") => {
+    const map = {
+      admin: { email: "admin@gizikantin.demo", password: "Admin#1234" },
+      guru: { email: "guru@gizikantin.demo", password: "Guru#1234" },
+      kantin: { email: "kantin@gizikantin.demo", password: "Kantin#1234" },
+    } as const;
+    setEmail(map[role].email);
+    setPassword(map[role].password);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -99,6 +109,20 @@ const Auth = () => {
                     {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Masuk
                   </Button>
+
+                  <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+                    <p className="text-xs font-medium text-foreground">Akun Demo (klik untuk isi)</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button type="button" variant="outline" size="sm" onClick={() => fillDemo("admin")}>Admin</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => fillDemo("guru")}>Guru</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => fillDemo("kantin")}>Kantin</Button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      admin@gizikantin.demo / Admin#1234<br/>
+                      guru@gizikantin.demo / Guru#1234<br/>
+                      kantin@gizikantin.demo / Kantin#1234
+                    </p>
+                  </div>
                 </form>
               </TabsContent>
 
