@@ -14,16 +14,217 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      foods: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string
+          created_by: string | null
+          fat: number
+          id: string
+          name: string
+          price: number
+          protein: number
+          sugar: number
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          created_by?: string | null
+          fat?: number
+          id?: string
+          name: string
+          price?: number
+          protein?: number
+          sugar?: number
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          created_by?: string | null
+          fat?: number
+          id?: string
+          name?: string
+          price?: number
+          protein?: number
+          sugar?: number
+        }
+        Relationships: []
+      }
+      nutrition_targets: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string
+          fat: number
+          id: string
+          is_active: boolean
+          label: string
+          protein: number
+          sugar: number
+        }
+        Insert: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fat?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          protein?: number
+          sugar?: number
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          fat?: number
+          id?: string
+          is_active?: boolean
+          label?: string
+          protein?: number
+          sugar?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      students: {
+        Row: {
+          birth_date: string | null
+          class_name: string
+          created_at: string
+          full_name: string
+          gender: string | null
+          id: string
+          nis: string
+        }
+        Insert: {
+          birth_date?: string | null
+          class_name: string
+          created_at?: string
+          full_name: string
+          gender?: string | null
+          id?: string
+          nis: string
+        }
+        Update: {
+          birth_date?: string | null
+          class_name?: string
+          created_at?: string
+          full_name?: string
+          gender?: string | null
+          id?: string
+          nis?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          consumed_at: string
+          created_at: string
+          food_id: string
+          id: string
+          quantity: number
+          recorded_by: string | null
+          student_id: string
+        }
+        Insert: {
+          consumed_at?: string
+          created_at?: string
+          food_id: string
+          id?: string
+          quantity?: number
+          recorded_by?: string | null
+          student_id: string
+        }
+        Update: {
+          consumed_at?: string
+          created_at?: string
+          food_id?: string
+          id?: string
+          quantity?: number
+          recorded_by?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_my_roles: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"][]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "guru" | "kantin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +351,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "guru", "kantin"],
+    },
   },
 } as const
