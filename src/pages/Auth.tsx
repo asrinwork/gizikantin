@@ -30,6 +30,16 @@ const Auth = () => {
     if (!loading && user) nav("/", { replace: true });
   }, [user, loading, nav]);
 
+  const fillDemo = (role: "admin" | "guru" | "kantin") => {
+    const map = {
+      admin: { email: "admin@gizikantin.demo", password: "Admin#1234" },
+      guru: { email: "guru@gizikantin.demo", password: "Guru#1234" },
+      kantin: { email: "kantin@gizikantin.demo", password: "Kantin#1234" },
+    } as const;
+    setEmail(map[role].email);
+    setPassword(map[role].password);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
