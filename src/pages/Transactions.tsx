@@ -160,6 +160,12 @@ const Transactions = () => {
           </CardContent>
         </Card>
       </div>
+
+      <BarcodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onDetected={handleScanned}
+      />
     </div>
   );
 };
