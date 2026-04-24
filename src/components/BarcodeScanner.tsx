@@ -56,9 +56,13 @@ export const BarcodeScanner = ({ open, onOpenChange, onDetected }: Props) => {
 
         const scanner = new Html5Qrcode(containerId);
         scannerRef.current = scanner;
+        const containerEl = document.getElementById(containerId);
+        const boxSize = containerEl
+          ? Math.round(Math.min(containerEl.clientWidth, containerEl.clientHeight) * 0.75)
+          : 240;
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 240, height: 240 } },
+          { fps: 10, qrbox: { width: boxSize, height: boxSize } },
           (decodedText) => {
             if (cancelled) return;
             onDetected(decodedText);
