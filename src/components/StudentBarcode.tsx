@@ -1,43 +1,25 @@
 import { useEffect, useRef } from "react";
-import JsBarcode from "jsbarcode";
+import QRCode from "qrcode";
 
 interface Props {
   value: string;
-  displayValue?: boolean;
-  height?: number;
-  width?: number;
-  fontSize?: number;
+  size?: number;
   className?: string;
 }
 
-/** Renders a CODE128 barcode for the given value (typically the student's NIS). */
-export const StudentBarcode = ({
-  value,
-  displayValue = true,
-  height = 60,
-  width = 2,
-  fontSize = 14,
-  className,
-}: Props) => {
-  const ref = useRef<SVGSVGElement>(null);
+/** Renders a QR code for the given value (typically the student's NIS). */
+export const StudentBarcode = ({ value, size = 180, className }: Props) => {
+  const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (!ref.current || !value) return;
-    try {
-      JsBarcode(ref.current, value, {
-        format: "CODE128",
-        displayValue,
-        height,
-        width,
-        fontSize,
-        margin: 4,
-        background: "#ffffff",
-        lineColor: "#000000",
-      });
-    } catch (e) {
-      console.error("Barcode render failed", e);
-    }
-  }, [value, displayValue, height, width, fontSize]);
+    QRCode.toCanvas(ref.current, value, {
+      width: size,
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+      errorCorrectionLevel: "M",
+    }).catch((e) => console.error("QR render failed", e));
+  }, [value, size]);
 
-  return <svg ref={ref} className={className} />;
+  return <canvas ref={ref} className={className} />;
 };

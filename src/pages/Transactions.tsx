@@ -101,11 +101,11 @@ const Transactions = () => {
                     onClick={() => setScannerOpen(true)}
                   >
                     <ScanLine className="h-4 w-4 mr-1.5" />
-                    Scan Barcode
+                    Scan QR
                   </Button>
                 </div>
                 <Select value={studentId} onValueChange={setStudentId}>
-                  <SelectTrigger><SelectValue placeholder="Pilih siswa atau scan barcode" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pilih siswa atau scan QR code" /></SelectTrigger>
                   <SelectContent>
                     {students.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.full_name} — {s.class_name} ({s.nis})</SelectItem>

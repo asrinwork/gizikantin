@@ -47,7 +47,7 @@ const Students = () => {
     } else {
       const { error } = await supabase.from("students").insert(payload);
       if (error) return toast.error(error.message);
-      toast.success("Siswa ditambahkan — barcode siap dicetak");
+      toast.success("Siswa ditambahkan — QR code siap dicetak");
     }
     setOpen(false); load();
   };
@@ -66,10 +66,8 @@ const Students = () => {
     }
     setBulkBusy(true);
     try {
-      // Allow UI to update before heavy sync work
-      await new Promise((r) => setTimeout(r, 50));
-      downloadBulkBarcodesPDF(list);
-      toast.success(`PDF berisi ${list.length} barcode telah diunduh`);
+      await downloadBulkBarcodesPDF(list);
+      toast.success(`PDF berisi ${list.length} QR code telah diunduh`);
     } catch (e: any) {
       toast.error("Gagal membuat PDF: " + (e?.message ?? e));
     } finally {
@@ -87,7 +85,7 @@ const Students = () => {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
             <FileDown className="h-4 w-4 mr-2" />
-            {bulkBusy ? "Menyiapkan..." : "Unduh Semua Barcode (PDF)"}
+            {bulkBusy ? "Menyiapkan..." : "Unduh Semua QR (PDF)"}
           </Button>
           <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Siswa</Button>
         </div>
@@ -117,10 +115,10 @@ const Students = () => {
                     <td className="py-2 pr-4">{s.gender === "L" ? "Laki-laki" : s.gender === "P" ? "Perempuan" : "-"}</td>
                     <td className="py-2 pr-4">{s.birth_date ?? "-"}</td>
                     <td className="py-2 text-right whitespace-nowrap">
-                      <Button size="icon" variant="ghost" title="Lihat barcode" onClick={() => setBarcodeStudent(s)}>
+                      <Button size="icon" variant="ghost" title="Lihat QR code" onClick={() => setBarcodeStudent(s)}>
                         <QrCode className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" title="Unduh barcode" onClick={() => downloadStudentBarcodePNG(s)}>
+                      <Button size="icon" variant="ghost" title="Unduh QR code" onClick={() => downloadStudentBarcodePNG(s)}>
                         <Download className="h-4 w-4" />
                       </Button>
                       <Button size="icon" variant="ghost" title="Edit" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
@@ -159,7 +157,7 @@ const Students = () => {
               <div><Label>Tanggal Lahir</Label><Input type="date" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })} /></div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Barcode akan otomatis dibuat dari NIS dan dapat diunduh setelah siswa tersimpan.
+              QR code akan otomatis dibuat dari NIS dan dapat diunduh setelah siswa tersimpan.
             </p>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
@@ -169,11 +167,11 @@ const Students = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Per-student barcode preview */}
+      {/* Per-student QR preview */}
       <Dialog open={!!barcodeStudent} onOpenChange={(o) => !o && setBarcodeStudent(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Barcode Siswa</DialogTitle>
+            <DialogTitle>QR Code Siswa</DialogTitle>
           </DialogHeader>
           {barcodeStudent && (
             <div className="space-y-3 text-center">
