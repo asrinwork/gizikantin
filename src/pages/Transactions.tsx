@@ -28,6 +28,7 @@ const Transactions = () => {
   const [foodId, setFoodId] = useState("");
   const [qty, setQty] = useState("1");
   const [busy, setBusy] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const load = async () => {
     const [s, f, r] = await Promise.all([
