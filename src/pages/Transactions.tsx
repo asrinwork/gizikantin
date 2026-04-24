@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ShoppingCart, Trash2 } from "lucide-react";
+import { Loader2, ShoppingCart, Trash2, ScanLine } from "lucide-react";
 import { formatNum } from "@/lib/nutrition";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 interface Student { id: string; nis: string; full_name: string; class_name: string; }
 interface Food { id: string; name: string; calories: number; price: number; }

@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, QrCode, Download, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { StudentBarcode } from "@/components/StudentBarcode";
+import { downloadStudentBarcodePNG, downloadBulkBarcodesPDF } from "@/lib/barcode-pdf";
 
 interface Student {
   id: string; nis: string; full_name: string; class_name: string;
@@ -20,6 +22,8 @@ const Students = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [form, setForm] = useState<any>(empty);
+  const [barcodeStudent, setBarcodeStudent] = useState<Student | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = async () => {
     const { data } = await supabase.from("students").select("*").order("class_name").order("full_name");
@@ -43,7 +47,7 @@ const Students = () => {
     } else {
       const { error } = await supabase.from("students").insert(payload);
       if (error) return toast.error(error.message);
-      toast.success("Siswa ditambahkan");
+      toast.success("Siswa ditambahkan — barcode siap dicetak");
     }
     setOpen(false); load();
   };
@@ -55,6 +59,24 @@ const Students = () => {
     toast.success("Dihapus"); load();
   };
 
+  const handleBulkDownload = async () => {
+    if (list.length === 0) {
+      toast.error("Belum ada siswa untuk diunduh");
+      return;
+    }
+    setBulkBusy(true);
+    try {
+      // Allow UI to update before heavy sync work
+      await new Promise((r) => setTimeout(r, 50));
+      downloadBulkBarcodesPDF(list);
+      toast.success(`PDF berisi ${list.length} barcode telah diunduh`);
+    } catch (e: any) {
+      toast.error("Gagal membuat PDF: " + (e?.message ?? e));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -62,7 +84,13 @@ const Students = () => {
           <h1 className="text-3xl font-bold">Data Siswa</h1>
           <p className="text-muted-foreground">Kelola data master siswa peserta uji coba</p>
         </div>
-        <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Siswa</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {bulkBusy ? "Menyiapkan..." : "Unduh Semua Barcode (PDF)"}
+          </Button>
+          <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Siswa</Button>
+        </div>
       </div>
 
       <Card className="shadow-soft">
@@ -89,8 +117,14 @@ const Students = () => {
                     <td className="py-2 pr-4">{s.gender === "L" ? "Laki-laki" : s.gender === "P" ? "Perempuan" : "-"}</td>
                     <td className="py-2 pr-4">{s.birth_date ?? "-"}</td>
                     <td className="py-2 text-right whitespace-nowrap">
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" title="Lihat barcode" onClick={() => setBarcodeStudent(s)}>
+                        <QrCode className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" title="Unduh barcode" onClick={() => downloadStudentBarcodePNG(s)}>
+                        <Download className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" title="Edit" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" title="Hapus" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </td>
                   </tr>
                 ))}
@@ -101,6 +135,7 @@ const Students = () => {
         </CardContent>
       </Card>
 
+      {/* Add/Edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{editing ? "Edit" : "Tambah"} Siswa</DialogTitle></DialogHeader>
@@ -123,11 +158,38 @@ const Students = () => {
               </div>
               <div><Label>Tanggal Lahir</Label><Input type="date" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })} /></div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Barcode akan otomatis dibuat dari NIS dan dapat diunduh setelah siswa tersimpan.
+            </p>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
               <Button type="submit">Simpan</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Per-student barcode preview */}
+      <Dialog open={!!barcodeStudent} onOpenChange={(o) => !o && setBarcodeStudent(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Barcode Siswa</DialogTitle>
+          </DialogHeader>
+          {barcodeStudent && (
+            <div className="space-y-3 text-center">
+              <div>
+                <p className="font-semibold">{barcodeStudent.full_name}</p>
+                <p className="text-sm text-muted-foreground">Kelas {barcodeStudent.class_name}</p>
+              </div>
+              <div className="bg-white rounded-md p-3 flex justify-center">
+                <StudentBarcode value={barcodeStudent.nis} />
+              </div>
+              <Button className="w-full" onClick={() => downloadStudentBarcodePNG(barcodeStudent)}>
+                <Download className="h-4 w-4 mr-2" />
+                Unduh PNG
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
