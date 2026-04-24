@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ShoppingCart, Trash2 } from "lucide-react";
+import { Loader2, ShoppingCart, Trash2, ScanLine } from "lucide-react";
 import { formatNum } from "@/lib/nutrition";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 interface Student { id: string; nis: string; full_name: string; class_name: string; }
 interface Food { id: string; name: string; calories: number; price: number; }
@@ -27,6 +28,7 @@ const Transactions = () => {
   const [foodId, setFoodId] = useState("");
   const [qty, setQty] = useState("1");
   const [busy, setBusy] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   const load = async () => {
     const [s, f, r] = await Promise.all([
@@ -64,6 +66,17 @@ const Transactions = () => {
     load();
   };
 
+  const handleScanned = (code: string) => {
+    const trimmed = code.trim();
+    const found = students.find((s) => s.nis === trimmed);
+    if (!found) {
+      toast.error(`Siswa dengan NIS "${trimmed}" tidak ditemukan`);
+      return;
+    }
+    setStudentId(found.id);
+    toast.success(`Siswa terpilih: ${found.full_name} (${found.class_name})`);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -79,9 +92,20 @@ const Transactions = () => {
           <CardContent>
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Siswa</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Siswa</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setScannerOpen(true)}
+                  >
+                    <ScanLine className="h-4 w-4 mr-1.5" />
+                    Scan Barcode
+                  </Button>
+                </div>
                 <Select value={studentId} onValueChange={setStudentId}>
-                  <SelectTrigger><SelectValue placeholder="Pilih siswa" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pilih siswa atau scan barcode" /></SelectTrigger>
                   <SelectContent>
                     {students.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.full_name} — {s.class_name} ({s.nis})</SelectItem>
@@ -136,6 +160,12 @@ const Transactions = () => {
           </CardContent>
         </Card>
       </div>
+
+      <BarcodeScanner
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onDetected={handleScanned}
+      />
     </div>
   );
 };
