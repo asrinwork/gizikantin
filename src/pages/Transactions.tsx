@@ -66,6 +66,17 @@ const Transactions = () => {
     load();
   };
 
+  const handleScanned = (code: string) => {
+    const trimmed = code.trim();
+    const found = students.find((s) => s.nis === trimmed);
+    if (!found) {
+      toast.error(`Siswa dengan NIS "${trimmed}" tidak ditemukan`);
+      return;
+    }
+    setStudentId(found.id);
+    toast.success(`Siswa terpilih: ${found.full_name} (${found.class_name})`);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -81,9 +92,20 @@ const Transactions = () => {
           <CardContent>
             <form onSubmit={submit} className="space-y-4">
               <div className="space-y-2">
-                <Label>Siswa</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label>Siswa</Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setScannerOpen(true)}
+                  >
+                    <ScanLine className="h-4 w-4 mr-1.5" />
+                    Scan Barcode
+                  </Button>
+                </div>
                 <Select value={studentId} onValueChange={setStudentId}>
-                  <SelectTrigger><SelectValue placeholder="Pilih siswa" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Pilih siswa atau scan barcode" /></SelectTrigger>
                   <SelectContent>
                     {students.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.full_name} — {s.class_name} ({s.nis})</SelectItem>
