@@ -1,5 +1,5 @@
 import jsPDF from "jspdf";
-import JsBarcode from "jsbarcode";
+import QRCode from "qrcode";
 
 export interface BarcodeStudent {
   nis: string;
@@ -7,47 +7,43 @@ export interface BarcodeStudent {
   class_name: string;
 }
 
-/** Generate a single PNG dataURL barcode for a value (CODE128). */
-const makeBarcodeDataUrl = (value: string): string => {
-  const canvas = document.createElement("canvas");
-  JsBarcode(canvas, value, {
-    format: "CODE128",
-    displayValue: true,
-    height: 60,
-    width: 2,
-    fontSize: 14,
-    margin: 4,
-    background: "#ffffff",
-    lineColor: "#000000",
+const makeQrDataUrl = async (value: string, size = 256): Promise<string> => {
+  return QRCode.toDataURL(value, {
+    width: size,
+    margin: 1,
+    color: { dark: "#000000", light: "#ffffff" },
+    errorCorrectionLevel: "M",
   });
-  return canvas.toDataURL("image/png");
 };
 
-/** Download a single student's barcode as PNG. */
-export const downloadStudentBarcodePNG = (s: BarcodeStudent) => {
-  const url = makeBarcodeDataUrl(s.nis);
+/** Download a single student's QR code as PNG. */
+export const downloadStudentBarcodePNG = async (s: BarcodeStudent) => {
+  const url = await makeQrDataUrl(s.nis, 512);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `barcode-${s.nis}-${s.full_name.replace(/\s+/g, "_")}.png`;
+  a.download = `qr-${s.nis}-${s.full_name.replace(/\s+/g, "_")}.png`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 };
 
 /**
- * Generate a printable PDF (A4) containing barcodes for every student.
- * Layout: 2 columns × 5 rows = 10 cards per page.
+ * Generate a printable PDF (A4) containing QR codes for every student.
+ * Layout: 3 columns × 4 rows = 12 cards per page.
  */
-export const downloadBulkBarcodesPDF = (students: BarcodeStudent[]) => {
+export const downloadBulkBarcodesPDF = async (students: BarcodeStudent[]) => {
   if (students.length === 0) return;
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const pageW = pdf.internal.pageSize.getWidth();   // 210
   const pageH = pdf.internal.pageSize.getHeight();  // 297
   const margin = 10;
-  const cols = 2;
-  const rows = 5;
+  const cols = 3;
+  const rows = 4;
   const cardW = (pageW - margin * 2) / cols;
   const cardH = (pageH - margin * 2) / rows;
+
+  // Pre-generate QR data URLs in parallel
+  const qrUrls = await Promise.all(students.map((s) => makeQrDataUrl(s.nis, 512)));
 
   students.forEach((s, idx) => {
     const onPage = idx % (cols * rows);
@@ -63,18 +59,22 @@ export const downloadBulkBarcodesPDF = (students: BarcodeStudent[]) => {
 
     // Header text
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(11);
-    pdf.text(s.full_name, x + cardW / 2, y + 9, { align: "center", maxWidth: cardW - 8 });
+    pdf.setFontSize(10);
+    pdf.text(s.full_name, x + cardW / 2, y + 8, { align: "center", maxWidth: cardW - 6 });
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(9);
-    pdf.text(`Kelas ${s.class_name}`, x + cardW / 2, y + 15, { align: "center" });
+    pdf.setFontSize(8);
+    pdf.text(`Kelas ${s.class_name}`, x + cardW / 2, y + 13, { align: "center" });
 
-    // Barcode image
-    const dataUrl = makeBarcodeDataUrl(s.nis);
-    const imgW = cardW - 20;
-    const imgH = cardH - 30;
-    pdf.addImage(dataUrl, "PNG", x + 10, y + 18, imgW, imgH - 6);
+    // QR image (square, centered)
+    const qrSize = Math.min(cardW, cardH) - 22;
+    const qrX = x + (cardW - qrSize) / 2;
+    const qrY = y + 16;
+    pdf.addImage(qrUrls[idx], "PNG", qrX, qrY, qrSize, qrSize);
+
+    // NIS at bottom
+    pdf.setFontSize(8);
+    pdf.text(`NIS: ${s.nis}`, x + cardW / 2, y + cardH - 4, { align: "center" });
   });
 
-  pdf.save(`barcode-siswa-${new Date().toISOString().slice(0, 10)}.pdf`);
+  pdf.save(`qrcode-siswa-${new Date().toISOString().slice(0, 10)}.pdf`);
 };
