@@ -66,10 +66,8 @@ const Students = () => {
     }
     setBulkBusy(true);
     try {
-      // Allow UI to update before heavy sync work
-      await new Promise((r) => setTimeout(r, 50));
-      downloadBulkBarcodesPDF(list);
-      toast.success(`PDF berisi ${list.length} barcode telah diunduh`);
+      await downloadBulkBarcodesPDF(list);
+      toast.success(`PDF berisi ${list.length} QR code telah diunduh`);
     } catch (e: any) {
       toast.error("Gagal membuat PDF: " + (e?.message ?? e));
     } finally {
@@ -87,7 +85,7 @@ const Students = () => {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
             <FileDown className="h-4 w-4 mr-2" />
-            {bulkBusy ? "Menyiapkan..." : "Unduh Semua Barcode (PDF)"}
+            {bulkBusy ? "Menyiapkan..." : "Unduh Semua QR (PDF)"}
           </Button>
           <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Siswa</Button>
         </div>
