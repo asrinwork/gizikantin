@@ -24,7 +24,7 @@ const Users = () => {
   };
 
   const removeRole = async (user_id: string, role: string) => {
-    const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role);
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", user_id).eq("role", role as any);
     if (error) return toast.error(error.message);
     toast.success("Peran dihapus"); load();
   };
