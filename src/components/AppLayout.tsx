@@ -11,6 +11,12 @@ import {
   Salad,
   Menu,
   X,
+  ClipboardList,
+  School,
+  UserCog,
+  BarChart3,
+  UserCircle,
+  Package,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -18,10 +24,21 @@ import { cn } from "@/lib/utils";
 type NavItem = { to: string; label: string; icon: any; roles?: string[] };
 
 const NAV: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/transaksi", label: "Transaksi", icon: ShoppingCart, roles: ["kantin", "admin"] },
-  { to: "/makanan", label: "Makanan", icon: Utensils, roles: ["kantin", "admin"] },
-  { to: "/siswa", label: "Siswa", icon: Users, roles: ["admin"] },
+  { to: "/", label: "Beranda", icon: LayoutDashboard },
+  // Siswa
+  { to: "/menu", label: "Pesan Makanan", icon: Utensils, roles: ["siswa"] },
+  { to: "/orders", label: "Pesananku", icon: ClipboardList, roles: ["siswa"] },
+  { to: "/profil", label: "Profil", icon: UserCircle, roles: ["siswa"] },
+  // Kantin
+  { to: "/pesanan-masuk", label: "Pesanan Masuk", icon: Package, roles: ["kantin", "admin"] },
+  { to: "/transaksi", label: "Kasir POS", icon: ShoppingCart, roles: ["kantin", "admin"] },
+  { to: "/makanan", label: "Menu Makanan", icon: Utensils, roles: ["kantin", "admin"] },
+  // Guru/Admin
+  { to: "/grafik", label: "Grafik & Alert", icon: BarChart3, roles: ["guru", "admin"] },
+  // Admin
+  { to: "/siswa", label: "Data Siswa", icon: Users, roles: ["admin"] },
+  { to: "/kelas", label: "Kelas", icon: School, roles: ["admin"] },
+  { to: "/users", label: "User & Peran", icon: UserCog, roles: ["admin"] },
   { to: "/target", label: "Target Gizi", icon: Target, roles: ["admin"] },
 ];
 

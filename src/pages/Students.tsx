@@ -6,39 +6,68 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, QrCode, Download, FileDown } from "lucide-react";
+import { Plus, Pencil, Trash2, QrCode, Download, FileDown, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { StudentBarcode } from "@/components/StudentBarcode";
 import { downloadStudentBarcodePNG, downloadBulkBarcodesPDF } from "@/lib/barcode-pdf";
+import { StudentImportDialog } from "@/components/StudentImportDialog";
+import { ACTIVITY_LABEL, type ActivityLevel } from "@/lib/calorie";
 
+interface ClassRow { id: string; name: string; }
 interface Student {
-  id: string; nis: string; full_name: string; class_name: string;
+  id: string; nis: string; full_name: string; class_name: string; class_id: string | null;
   gender: "L" | "P" | null; birth_date: string | null;
+  height_cm: number | null; weight_kg: number | null; activity_level: ActivityLevel | null;
 }
-const empty: any = { nis: "", full_name: "", class_name: "", gender: "L", birth_date: "" };
+const empty: any = {
+  nis: "", full_name: "", class_name: "", class_id: null, gender: "L", birth_date: "",
+  height_cm: "", weight_kg: "", activity_level: "light",
+};
 
 const Students = () => {
   const [list, setList] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<ClassRow[]>([]);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
   const [form, setForm] = useState<any>(empty);
   const [barcodeStudent, setBarcodeStudent] = useState<Student | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
 
   const load = async () => {
-    const { data } = await supabase.from("students").select("*").order("class_name").order("full_name");
-    setList((data ?? []) as any);
+    const [s, c] = await Promise.all([
+      supabase.from("students").select("*").order("class_name").order("full_name"),
+      supabase.from("classes").select("id,name").order("name"),
+    ]);
+    setList((s.data ?? []) as any);
+    setClasses((c.data ?? []) as any);
   };
   useEffect(() => { load(); }, []);
 
   const startNew = () => { setEditing(null); setForm(empty); setOpen(true); };
-  const startEdit = (s: Student) => { setEditing(s); setForm({ ...s, birth_date: s.birth_date ?? "" }); setOpen(true); };
+  const startEdit = (s: Student) => {
+    setEditing(s);
+    setForm({
+      ...s,
+      birth_date: s.birth_date ?? "",
+      height_cm: s.height_cm ?? "",
+      weight_kg: s.weight_kg ?? "",
+      activity_level: s.activity_level ?? "light",
+    });
+    setOpen(true);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cls = classes.find((c) => c.id === form.class_id);
     const payload: any = {
-      nis: form.nis, full_name: form.full_name, class_name: form.class_name,
+      nis: form.nis, full_name: form.full_name,
+      class_name: cls?.name ?? form.class_name,
+      class_id: form.class_id || null,
       gender: form.gender, birth_date: form.birth_date || null,
+      height_cm: form.height_cm ? +form.height_cm : null,
+      weight_kg: form.weight_kg ? +form.weight_kg : null,
+      activity_level: form.activity_level,
     };
     if (editing) {
       const { error } = await supabase.from("students").update(payload).eq("id", editing.id);
@@ -47,7 +76,7 @@ const Students = () => {
     } else {
       const { error } = await supabase.from("students").insert(payload);
       if (error) return toast.error(error.message);
-      toast.success("Siswa ditambahkan — QR code siap dicetak");
+      toast.success("Siswa ditambahkan. Gunakan Import CSV untuk membuat akun login.");
     }
     setOpen(false); load();
   };
@@ -60,19 +89,11 @@ const Students = () => {
   };
 
   const handleBulkDownload = async () => {
-    if (list.length === 0) {
-      toast.error("Belum ada siswa untuk diunduh");
-      return;
-    }
+    if (list.length === 0) { toast.error("Belum ada siswa"); return; }
     setBulkBusy(true);
-    try {
-      await downloadBulkBarcodesPDF(list);
-      toast.success(`PDF berisi ${list.length} QR code telah diunduh`);
-    } catch (e: any) {
-      toast.error("Gagal membuat PDF: " + (e?.message ?? e));
-    } finally {
-      setBulkBusy(false);
-    }
+    try { await downloadBulkBarcodesPDF(list); toast.success(`PDF ${list.length} QR code diunduh`); }
+    catch (e: any) { toast.error("Gagal: " + (e?.message ?? e)); }
+    finally { setBulkBusy(false); }
   };
 
   return (
@@ -80,14 +101,16 @@ const Students = () => {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Data Siswa</h1>
-          <p className="text-muted-foreground">Kelola data master siswa peserta uji coba</p>
+          <p className="text-muted-foreground">Kelola data siswa & akun login</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
-            <FileDown className="h-4 w-4 mr-2" />
-            {bulkBusy ? "Menyiapkan..." : "Unduh Semua QR (PDF)"}
+          <Button variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Import CSV
           </Button>
-          <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Siswa</Button>
+          <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
+            <FileDown className="h-4 w-4 mr-2" />{bulkBusy ? "Menyiapkan..." : "Unduh Semua QR"}
+          </Button>
+          <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah</Button>
         </div>
       </div>
 
@@ -101,8 +124,9 @@ const Students = () => {
                   <th className="py-2 pr-4">NIS</th>
                   <th className="py-2 pr-4">Nama</th>
                   <th className="py-2 pr-4">Kelas</th>
-                  <th className="py-2 pr-4">Gender</th>
-                  <th className="py-2 pr-4">Tgl Lahir</th>
+                  <th className="py-2 pr-4">JK</th>
+                  <th className="py-2 pr-4">TB/BB</th>
+                  <th className="py-2 pr-4">Akun</th>
                   <th className="py-2"></th>
                 </tr>
               </thead>
@@ -112,35 +136,39 @@ const Students = () => {
                     <td className="py-2 pr-4 font-mono text-xs">{s.nis}</td>
                     <td className="py-2 pr-4 font-medium">{s.full_name}</td>
                     <td className="py-2 pr-4">{s.class_name}</td>
-                    <td className="py-2 pr-4">{s.gender === "L" ? "Laki-laki" : s.gender === "P" ? "Perempuan" : "-"}</td>
-                    <td className="py-2 pr-4">{s.birth_date ?? "-"}</td>
+                    <td className="py-2 pr-4">{s.gender === "P" ? "P" : "L"}</td>
+                    <td className="py-2 pr-4 text-xs">{s.height_cm ?? "-"}/{s.weight_kg ?? "-"}</td>
+                    <td className="py-2 pr-4">{(s as any).user_id ? <span className="text-success text-xs">✓</span> : <span className="text-muted-foreground text-xs">—</span>}</td>
                     <td className="py-2 text-right whitespace-nowrap">
-                      <Button size="icon" variant="ghost" title="Lihat QR code" onClick={() => setBarcodeStudent(s)}>
-                        <QrCode className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" title="Unduh QR code" onClick={() => downloadStudentBarcodePNG(s)}>
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" title="Edit" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" title="Hapus" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" title="Lihat QR" onClick={() => setBarcodeStudent(s)}><QrCode className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" title="Unduh QR" onClick={() => downloadStudentBarcodePNG(s)}><Download className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </td>
                   </tr>
                 ))}
-                {list.length === 0 && <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Belum ada siswa.</td></tr>}
+                {list.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Belum ada siswa.</td></tr>}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
 
-      {/* Add/Edit dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Edit" : "Tambah"} Siswa</DialogTitle></DialogHeader>
           <form onSubmit={submit} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>NIS</Label><Input required value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} /></div>
-              <div><Label>Kelas</Label><Input required value={form.class_name} onChange={(e) => setForm({ ...form, class_name: e.target.value })} /></div>
+              <div>
+                <Label>Kelas</Label>
+                <Select value={form.class_id ?? ""} onValueChange={(v) => setForm({ ...form, class_id: v })}>
+                  <SelectTrigger><SelectValue placeholder="Pilih kelas" /></SelectTrigger>
+                  <SelectContent>
+                    {classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div><Label>Nama Lengkap</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -148,17 +176,22 @@ const Students = () => {
                 <Label>Jenis Kelamin</Label>
                 <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="L">Laki-laki</SelectItem>
-                    <SelectItem value="P">Perempuan</SelectItem>
-                  </SelectContent>
+                  <SelectContent><SelectItem value="L">Laki-laki</SelectItem><SelectItem value="P">Perempuan</SelectItem></SelectContent>
                 </Select>
               </div>
               <div><Label>Tanggal Lahir</Label><Input type="date" value={form.birth_date} onChange={(e) => setForm({ ...form, birth_date: e.target.value })} /></div>
+              <div><Label>Tinggi (cm)</Label><Input type="number" step="0.1" value={form.height_cm} onChange={(e) => setForm({ ...form, height_cm: e.target.value })} /></div>
+              <div><Label>Berat (kg)</Label><Input type="number" step="0.1" value={form.weight_kg} onChange={(e) => setForm({ ...form, weight_kg: e.target.value })} /></div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              QR code akan otomatis dibuat dari NIS dan dapat diunduh setelah siswa tersimpan.
-            </p>
+            <div>
+              <Label>Aktivitas</Label>
+              <Select value={form.activity_level} onValueChange={(v) => setForm({ ...form, activity_level: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ACTIVITY_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
               <Button type="submit">Simpan</Button>
@@ -167,29 +200,23 @@ const Students = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Per-student QR preview */}
       <Dialog open={!!barcodeStudent} onOpenChange={(o) => !o && setBarcodeStudent(null)}>
         <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>QR Code Siswa</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>QR Code Siswa</DialogTitle></DialogHeader>
           {barcodeStudent && (
             <div className="space-y-3 text-center">
               <div>
                 <p className="font-semibold">{barcodeStudent.full_name}</p>
                 <p className="text-sm text-muted-foreground">Kelas {barcodeStudent.class_name}</p>
               </div>
-              <div className="bg-white rounded-md p-3 flex justify-center">
-                <StudentBarcode value={barcodeStudent.nis} />
-              </div>
-              <Button className="w-full" onClick={() => downloadStudentBarcodePNG(barcodeStudent)}>
-                <Download className="h-4 w-4 mr-2" />
-                Unduh PNG
-              </Button>
+              <div className="bg-white rounded-md p-3 flex justify-center"><StudentBarcode value={barcodeStudent.nis} /></div>
+              <Button className="w-full" onClick={() => downloadStudentBarcodePNG(barcodeStudent)}><Download className="h-4 w-4 mr-2" /> Unduh PNG</Button>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <StudentImportDialog open={importOpen} onOpenChange={setImportOpen} onDone={load} />
     </div>
   );
 };

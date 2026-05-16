@@ -14,6 +14,74 @@ export type Database = {
   }
   public: {
     Tables: {
+      classes: {
+        Row: {
+          created_at: string
+          grade_level: number | null
+          homeroom_teacher_id: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          grade_level?: number | null
+          homeroom_teacher_id?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          grade_level?: number | null
+          homeroom_teacher_id?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      daily_nutrition_targets: {
+        Row: {
+          calories: number
+          carbs: number
+          created_at: string
+          date: string
+          fat: number
+          id: string
+          protein: number
+          student_id: string
+          sugar: number
+        }
+        Insert: {
+          calories: number
+          carbs: number
+          created_at?: string
+          date?: string
+          fat: number
+          id?: string
+          protein: number
+          student_id: string
+          sugar: number
+        }
+        Update: {
+          calories?: number
+          carbs?: number
+          created_at?: string
+          date?: string
+          fat?: number
+          id?: string
+          protein?: number
+          student_id?: string
+          sugar?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_nutrition_targets_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       foods: {
         Row: {
           calories: number
@@ -89,6 +157,92 @@ export type Database = {
         }
         Relationships: []
       }
+      order_items: {
+        Row: {
+          food_id: string
+          id: string
+          order_id: string
+          quantity: number
+          unit_calories: number
+          unit_price: number
+        }
+        Insert: {
+          food_id: string
+          id?: string
+          order_id: string
+          quantity?: number
+          unit_calories?: number
+          unit_price?: number
+        }
+        Update: {
+          food_id?: string
+          id?: string
+          order_id?: string
+          quantity?: number
+          unit_calories?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_food_id_fkey"
+            columns: ["food_id"]
+            isOneToOne: false
+            referencedRelation: "foods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          student_id: string
+          total_calories: number
+          total_price: number
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          student_id: string
+          total_calories?: number
+          total_price?: number
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          student_id?: string
+          total_calories?: number
+          total_price?: number
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -112,33 +266,56 @@ export type Database = {
       }
       students: {
         Row: {
+          activity_level: string
           birth_date: string | null
+          class_id: string | null
           class_name: string
           created_at: string
           full_name: string
           gender: string | null
+          height_cm: number | null
           id: string
           nis: string
+          user_id: string | null
+          weight_kg: number | null
         }
         Insert: {
+          activity_level?: string
           birth_date?: string | null
+          class_id?: string | null
           class_name: string
           created_at?: string
           full_name: string
           gender?: string | null
+          height_cm?: number | null
           id?: string
           nis: string
+          user_id?: string | null
+          weight_kg?: number | null
         }
         Update: {
+          activity_level?: string
           birth_date?: string | null
+          class_id?: string | null
           class_name?: string
           created_at?: string
           full_name?: string
           gender?: string | null
+          height_cm?: number | null
           id?: string
           nis?: string
+          user_id?: string | null
+          weight_kg?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {
@@ -211,6 +388,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calc_daily_calories: { Args: { _student_id: string }; Returns: number }
       get_my_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
@@ -222,9 +400,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      today_calories: { Args: { _student_id: string }; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "guru" | "kantin"
+      app_role: "admin" | "guru" | "kantin" | "siswa"
+      order_status: "pending" | "ready" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -352,7 +532,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "guru", "kantin"],
+      app_role: ["admin", "guru", "kantin", "siswa"],
+      order_status: ["pending", "ready", "completed", "cancelled"],
     },
   },
 } as const
