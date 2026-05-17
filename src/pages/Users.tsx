@@ -6,14 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-interface Row { user_id: string; role: string; email?: string; }
+interface Row { user_id: string; role: string; }
+interface Profile { id: string; full_name: string; email: string | null; }
 
 const Users = () => {
   const [rows, setRows] = useState<Row[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
 
   const load = async () => {
-    const { data } = await supabase.from("user_roles").select("user_id,role").order("role");
-    setRows((data ?? []) as any);
+    const [{ data: r }, { data: p }] = await Promise.all([
+      supabase.from("user_roles").select("user_id,role").order("role"),
+      supabase.from("profiles").select("id,full_name,email"),
+    ]);
+    setRows((r ?? []) as any);
+    const map: Record<string, Profile> = {};
+    (p ?? []).forEach((x: any) => { map[x.id] = x; });
+    setProfiles(map);
   };
   useEffect(() => { load(); }, []);
 
