@@ -22,7 +22,7 @@ const Charts = () => {
     from.setDate(from.getDate() - days);
     from.setHours(0, 0, 0, 0);
     const [tx, st, fd] = await Promise.all([
-      supabase.from("transactions").select("student_id,quantity,consumed_at,foods(calories,protein,carbs,fat,sugar)")
+      supabase.from("transactions").select("student_id,food_id,quantity,consumed_at,foods(calories,protein,carbs,fat,sugar)")
         .gte("consumed_at", from.toISOString()),
       supabase.from("students").select("*"),
       supabase.from("foods").select("id,name,calories"),

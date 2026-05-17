@@ -6,14 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-interface Row { user_id: string; role: string; email?: string; }
+interface Row { user_id: string; role: string; }
+interface Profile { id: string; full_name: string; email: string | null; }
 
 const Users = () => {
   const [rows, setRows] = useState<Row[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
 
   const load = async () => {
-    const { data } = await supabase.from("user_roles").select("user_id,role").order("role");
-    setRows((data ?? []) as any);
+    const [{ data: r }, { data: p }] = await Promise.all([
+      supabase.from("user_roles").select("user_id,role").order("role"),
+      supabase.from("profiles").select("id,full_name,email"),
+    ]);
+    setRows((r ?? []) as any);
+    const map: Record<string, Profile> = {};
+    (p ?? []).forEach((x: any) => { map[x.id] = x; });
+    setProfiles(map);
   };
   useEffect(() => { load(); }, []);
 
@@ -46,29 +54,33 @@ const Users = () => {
         <CardHeader><CardTitle>Pengguna & Peran ({Object.keys(grouped).length})</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {Object.entries(grouped).map(([uid, roles]) => (
-              <div key={uid} className="flex flex-wrap items-center gap-2 justify-between rounded-md border p-3">
-                <div className="min-w-0">
-                  <p className="font-mono text-xs text-muted-foreground truncate">{uid}</p>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {roles.map((r) => (
-                      <Badge key={r} variant="secondary" className="capitalize">
-                        {r}
-                        <button onClick={() => removeRole(uid, r)} className="ml-1.5 text-destructive hover:underline">×</button>
-                      </Badge>
-                    ))}
+            {Object.entries(grouped).map(([uid, roles]) => {
+              const p = profiles[uid];
+              return (
+                <div key={uid} className="flex flex-wrap items-center gap-2 justify-between rounded-md border p-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm truncate">{p?.full_name || "(tanpa nama)"}</p>
+                    <p className="text-xs text-muted-foreground truncate">{p?.email || uid}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {roles.map((r) => (
+                        <Badge key={r} variant="secondary" className="capitalize">
+                          {r}
+                          <button onClick={() => removeRole(uid, r)} className="ml-1.5 text-destructive hover:underline">×</button>
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
+                  <Select onValueChange={(v) => addRole(uid, v)}>
+                    <SelectTrigger className="w-40"><SelectValue placeholder="+ Tambah peran" /></SelectTrigger>
+                    <SelectContent>
+                      {["admin", "guru", "kantin", "siswa"].filter((r) => !roles.includes(r)).map((r) => (
+                        <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select onValueChange={(v) => addRole(uid, v)}>
-                  <SelectTrigger className="w-40"><SelectValue placeholder="+ Tambah peran" /></SelectTrigger>
-                  <SelectContent>
-                    {["admin", "guru", "kantin", "siswa"].filter((r) => !roles.includes(r)).map((r) => (
-                      <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+              );
+            })}
             {Object.keys(grouped).length === 0 && <p className="text-center py-8 text-muted-foreground">Belum ada user.</p>}
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
