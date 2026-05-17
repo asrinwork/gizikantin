@@ -63,7 +63,7 @@ export const StudentImportDialog = ({ open, onOpenChange, onDone }: Props) => {
           <DialogTitle>Import Siswa dari CSV</DialogTitle>
           <DialogDescription>
             Kolom: <code>nis, nama, kelas, gender, tgl_lahir, tinggi_cm, berat_kg, aktivitas</code>.
-            Akun login akan dibuat otomatis (email: <code>NIS@sekolah.local</code>, password awal: NIS).
+            Akun login dibuat otomatis (email: <code>NIS@sekolah.local</code>, password: NIS — dipanjangkan ke 6 karakter dengan '0' jika kurang).
           </DialogDescription>
         </DialogHeader>
 
