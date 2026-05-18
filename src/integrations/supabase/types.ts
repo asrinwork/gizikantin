@@ -477,6 +477,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      any_admin_exists: { Args: never; Returns: boolean }
       calc_daily_calories: { Args: { _student_id: string }; Returns: number }
       can_view_student: {
         Args: { _student_id: string; _uid: string }
@@ -492,6 +493,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      log_audit: {
+        Args: {
+          _action: string
+          _detail: Json
+          _entity: string
+          _entity_id: string
+        }
+        Returns: undefined
       }
       today_calories: { Args: { _student_id: string }; Returns: number }
     }
