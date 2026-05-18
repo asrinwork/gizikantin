@@ -11,6 +11,7 @@ import {
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatNum } from "@/lib/nutrition";
+import { logAudit } from "@/lib/audit";
 
 interface Food {
   id: string;
