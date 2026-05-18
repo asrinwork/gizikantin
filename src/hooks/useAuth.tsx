@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "guru" | "kantin" | "siswa";
+export type AppRole = "admin" | "guru" | "wali_kelas" | "kepala_sekolah" | "kantin" | "siswa";
 
 interface AuthCtx {
   user: User | null;

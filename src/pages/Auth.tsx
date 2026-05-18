@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Salad, Loader2 } from "lucide-react";
 
@@ -15,61 +13,45 @@ const Auth = () => {
   const { user, loading } = useAuth();
   const nav = useNavigate();
   const [busy, setBusy] = useState(false);
+  const [allowBootstrap, setAllowBootstrap] = useState(false);
+  const [mode, setMode] = useState<"login" | "bootstrap">("login");
 
-  // login
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // signup
-  const [sName, setSName] = useState("");
-  const [sEmail, setSEmail] = useState("");
-  const [sPass, setSPass] = useState("");
-  const [sRole, setSRole] = useState<"guru" | "kantin" | "admin">("guru");
+  const [bName, setBName] = useState("");
 
   useEffect(() => {
     if (!loading && user) nav("/", { replace: true });
   }, [user, loading, nav]);
 
-  const fillDemo = (role: "admin" | "guru" | "kantin") => {
-    const map = {
-      admin: { email: "admin@gizikantin.demo", password: "Admin#1234" },
-      guru: { email: "guru@gizikantin.demo", password: "Guru#1234" },
-      kantin: { email: "kantin@gizikantin.demo", password: "Kantin#1234" },
-    } as const;
-    setEmail(map[role].email);
-    setPassword(map[role].password);
-  };
+  useEffect(() => {
+    supabase.rpc("any_admin_exists").then(({ data }) => {
+      const exists = !!data;
+      setAllowBootstrap(!exists);
+      if (!exists) setMode("bootstrap");
+    });
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Berhasil masuk");
-    nav("/", { replace: true });
+    if (error) return toast.error(error.message);
+    toast.success("Berhasil masuk"); nav("/", { replace: true });
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleBootstrap = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     const { error } = await supabase.auth.signUp({
-      email: sEmail,
-      password: sPass,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-        data: { full_name: sName, role: sRole },
-      },
+      email, password,
+      options: { emailRedirectTo: `${window.location.origin}/`, data: { full_name: bName, role: "admin" } },
     });
     setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    toast.success("Akun dibuat. Silakan masuk.");
+    if (error) return toast.error(error.message);
+    toast.success("Admin pertama dibuat. Silakan masuk.");
+    setAllowBootstrap(false); setMode("login");
   };
 
   return (
@@ -85,84 +67,54 @@ const Auth = () => {
 
         <Card className="shadow-elevated">
           <CardHeader>
-            <CardTitle>Selamat datang</CardTitle>
-            <CardDescription>Masuk atau buat akun untuk melanjutkan</CardDescription>
+            <CardTitle>{mode === "bootstrap" ? "Setup Admin Pertama" : "Masuk"}</CardTitle>
+            <CardDescription>
+              {mode === "bootstrap"
+                ? "Belum ada admin di sistem. Daftarkan admin pertama untuk memulai."
+                : "Akun dibuat oleh admin. Hubungi admin jika Anda belum punya akses."}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="login">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Masuk</TabsTrigger>
-                <TabsTrigger value="signup">Daftar</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input id="login-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-pass">Password</Label>
-                    <Input id="login-pass" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                  </div>
-                  <Button type="submit" disabled={busy} className="w-full">
-                    {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Masuk
+            {mode === "login" ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input id="login-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-pass">Password</Label>
+                  <Input id="login-pass" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" disabled={busy} className="w-full">
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Masuk
+                </Button>
+                {allowBootstrap && (
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setMode("bootstrap")}>
+                    Setup admin pertama
                   </Button>
-
-                  <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
-                    <p className="text-xs font-medium text-foreground">Akun Demo (klik untuk isi)</p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={() => fillDemo("admin")}>Admin</Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => fillDemo("guru")}>Guru</Button>
-                      <Button type="button" variant="outline" size="sm" onClick={() => fillDemo("kantin")}>Kantin</Button>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-snug">
-                      admin@gizikantin.demo / Admin#1234<br/>
-                      guru@gizikantin.demo / Guru#1234<br/>
-                      kantin@gizikantin.demo / Kantin#1234
-                    </p>
-                  </div>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="su-name">Nama Lengkap</Label>
-                    <Input id="su-name" required value={sName} onChange={(e) => setSName(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="su-email">Email</Label>
-                    <Input id="su-email" type="email" required value={sEmail} onChange={(e) => setSEmail(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="su-pass">Password</Label>
-                    <Input id="su-pass" type="password" required minLength={6} value={sPass} onChange={(e) => setSPass(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Peran</Label>
-                    <Select value={sRole} onValueChange={(v: any) => setSRole(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="guru">Guru</SelectItem>
-                        <SelectItem value="kantin">Kantin</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Pengguna pertama otomatis menjadi Admin.
-                    </p>
-                  </div>
-                  <Button type="submit" disabled={busy} className="w-full">
-                    {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Daftar
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                )}
+              </form>
+            ) : (
+              <form onSubmit={handleBootstrap} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nama Lengkap</Label>
+                  <Input required value={bName} onChange={(e) => setBName(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button type="submit" disabled={busy} className="w-full">
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Buat Admin
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

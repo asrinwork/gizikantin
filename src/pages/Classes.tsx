@@ -4,30 +4,52 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { logAudit } from "@/lib/audit";
 
-interface ClassRow { id: string; name: string; grade_level: number | null; }
+interface ClassRow { id: string; name: string; grade_level: number | null; homeroom_teacher_id: string | null; }
+interface Teacher { id: string; full_name: string; email: string | null; }
 
 const Classes = () => {
   const [list, setList] = useState<ClassRow[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ClassRow | null>(null);
-  const [form, setForm] = useState({ name: "", grade_level: "" });
+  const [form, setForm] = useState({ name: "", grade_level: "", homeroom_teacher_id: "none" });
 
   const load = async () => {
     const { data } = await supabase.from("classes").select("*").order("name");
     setList((data ?? []) as any);
+    const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "wali_kelas");
+    const ids = (roles ?? []).map((r: any) => r.user_id);
+    if (ids.length) {
+      const { data: profs } = await supabase.from("profiles").select("id,full_name,email").in("id", ids);
+      setTeachers((profs ?? []) as any);
+    } else setTeachers([]);
   };
   useEffect(() => { load(); }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = { name: form.name, grade_level: form.grade_level ? +form.grade_level : null };
-    const q = editing ? supabase.from("classes").update(payload).eq("id", editing.id) : supabase.from("classes").insert(payload);
-    const { error } = await q;
-    if (error) return toast.error(error.message);
+    const payload: any = {
+      name: form.name,
+      grade_level: form.grade_level ? +form.grade_level : null,
+      homeroom_teacher_id: form.homeroom_teacher_id === "none" ? null : form.homeroom_teacher_id,
+    };
+    if (editing) {
+      const { error } = await supabase.from("classes").update(payload).eq("id", editing.id);
+      if (error) return toast.error(error.message);
+      await logAudit("update_class", "class", editing.id, payload);
+    } else {
+      const { data, error } = await supabase.from("classes").insert(payload).select("id").single();
+      if (error) return toast.error(error.message);
+      await logAudit("create_class", "class", data?.id ?? null, payload);
+    }
+    if (payload.homeroom_teacher_id) await logAudit("assign_homeroom", "class", editing?.id ?? null, { teacher: payload.homeroom_teacher_id });
     toast.success("Tersimpan"); setOpen(false); load();
   };
 
@@ -35,6 +57,7 @@ const Classes = () => {
     if (!confirm("Hapus kelas ini?")) return;
     const { error } = await supabase.from("classes").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    await logAudit("delete_class", "class", id, {});
     toast.success("Dihapus"); load();
   };
 
@@ -43,9 +66,9 @@ const Classes = () => {
       <div className="flex justify-between items-end flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold">Kelola Kelas</h1>
-          <p className="text-muted-foreground">Daftar kelas di sekolah</p>
+          <p className="text-muted-foreground">Daftar kelas & penugasan wali kelas</p>
         </div>
-        <Button onClick={() => { setEditing(null); setForm({ name: "", grade_level: "" }); setOpen(true); }}>
+        <Button onClick={() => { setEditing(null); setForm({ name: "", grade_level: "", homeroom_teacher_id: "none" }); setOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" /> Tambah Kelas
         </Button>
       </div>
@@ -54,23 +77,27 @@ const Classes = () => {
         <CardHeader><CardTitle>Daftar Kelas ({list.length})</CardTitle></CardHeader>
         <CardContent>
           <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2">Nama</th><th className="py-2">Tingkat</th><th></th></tr></thead>
+            <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2">Nama</th><th className="py-2">Tingkat</th><th className="py-2">Wali Kelas</th><th></th></tr></thead>
             <tbody>
-              {list.map((c) => (
-                <tr key={c.id} className="border-b hover:bg-muted/40">
-                  <td className="py-2 font-medium">{c.name}</td>
-                  <td className="py-2">{c.grade_level ?? "-"}</td>
-                  <td className="py-2 text-right">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setForm({ name: c.name, grade_level: c.grade_level?.toString() ?? "" }); setOpen(true); }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-              {list.length === 0 && <tr><td colSpan={3} className="text-center py-8 text-muted-foreground">Belum ada kelas.</td></tr>}
+              {list.map((c) => {
+                const t = teachers.find((x) => x.id === c.homeroom_teacher_id);
+                return (
+                  <tr key={c.id} className="border-b hover:bg-muted/40">
+                    <td className="py-2 font-medium">{c.name}</td>
+                    <td className="py-2">{c.grade_level ?? "-"}</td>
+                    <td className="py-2">{t ? <Badge variant="secondary">{t.full_name}</Badge> : <span className="text-muted-foreground">—</span>}</td>
+                    <td className="py-2 text-right">
+                      <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setForm({ name: c.name, grade_level: c.grade_level?.toString() ?? "", homeroom_teacher_id: c.homeroom_teacher_id ?? "none" }); setOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {list.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-muted-foreground">Belum ada kelas.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -82,6 +109,17 @@ const Classes = () => {
           <form onSubmit={submit} className="space-y-3">
             <div><Label>Nama</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="contoh: 7A" /></div>
             <div><Label>Tingkat</Label><Input type="number" value={form.grade_level} onChange={(e) => setForm({ ...form, grade_level: e.target.value })} placeholder="7" /></div>
+            <div>
+              <Label>Wali Kelas</Label>
+              <Select value={form.homeroom_teacher_id} onValueChange={(v) => setForm({ ...form, homeroom_teacher_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Pilih wali kelas" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Tidak ditugaskan —</SelectItem>
+                  {teachers.map((t) => <SelectItem key={t.id} value={t.id}>{t.full_name} ({t.email})</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Hanya user dengan peran <b>wali_kelas</b> yang muncul.</p>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
               <Button type="submit">Simpan</Button>

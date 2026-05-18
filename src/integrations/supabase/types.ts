@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          detail: Json | null
+          entity: string
+          entity_id: string | null
+          id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          entity: string
+          entity_id?: string | null
+          id?: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json | null
+          entity?: string
+          entity_id?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
       classes: {
         Row: {
           created_at: string
@@ -264,6 +297,33 @@ export type Database = {
         }
         Relationships: []
       }
+      student_notes: {
+        Row: {
+          author_id: string
+          created_at: string
+          id: string
+          message: string
+          severity: string
+          student_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          id?: string
+          message: string
+          severity?: string
+          student_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          severity?: string
+          student_id?: string
+        }
+        Relationships: []
+      }
       students: {
         Row: {
           activity_level: string
@@ -310,6 +370,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_class_access: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          teacher_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          teacher_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_class_access_class_id_fkey"
             columns: ["class_id"]
             isOneToOne: false
             referencedRelation: "classes"
@@ -388,7 +477,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      any_admin_exists: { Args: never; Returns: boolean }
       calc_daily_calories: { Args: { _student_id: string }; Returns: number }
+      can_view_student: {
+        Args: { _student_id: string; _uid: string }
+        Returns: boolean
+      }
       get_my_roles: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"][]
@@ -400,10 +494,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_audit: {
+        Args: {
+          _action: string
+          _detail: Json
+          _entity: string
+          _entity_id: string
+        }
+        Returns: undefined
+      }
       today_calories: { Args: { _student_id: string }; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "guru" | "kantin" | "siswa"
+      app_role:
+        | "admin"
+        | "guru"
+        | "kantin"
+        | "siswa"
+        | "wali_kelas"
+        | "kepala_sekolah"
       order_status: "pending" | "ready" | "completed" | "cancelled"
     }
     CompositeTypes: {
@@ -532,7 +641,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "guru", "kantin", "siswa"],
+      app_role: [
+        "admin",
+        "guru",
+        "kantin",
+        "siswa",
+        "wali_kelas",
+        "kepala_sekolah",
+      ],
       order_status: ["pending", "ready", "completed", "cancelled"],
     },
   },
