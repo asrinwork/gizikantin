@@ -46,10 +46,12 @@ const Foods = () => {
     if (editing) {
       const { error } = await supabase.from("foods").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
+      await logAudit("update_food", "food", editing.id, payload);
       toast.success("Makanan diperbarui");
     } else {
-      const { error } = await supabase.from("foods").insert({ ...payload, created_by: user?.id });
+      const { data, error } = await supabase.from("foods").insert({ ...payload, created_by: user?.id }).select("id").single();
       if (error) return toast.error(error.message);
+      await logAudit("create_food", "food", data?.id ?? null, payload);
       toast.success("Makanan ditambahkan");
     }
     setOpen(false);
@@ -60,6 +62,7 @@ const Foods = () => {
     if (!confirm("Hapus makanan ini?")) return;
     const { error } = await supabase.from("foods").delete().eq("id", id);
     if (error) return toast.error(error.message);
+    await logAudit("delete_food", "food", id, {});
     toast.success("Dihapus");
     load();
   };
