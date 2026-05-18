@@ -19,6 +19,7 @@ import StudentMenu from "./pages/StudentMenu";
 import StudentOrders from "./pages/StudentOrders";
 import StudentProfile from "./pages/StudentProfile";
 import CanteenOrders from "./pages/CanteenOrders";
+import AuditLogs from "./pages/AuditLogs";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
