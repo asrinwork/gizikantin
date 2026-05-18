@@ -137,6 +137,12 @@ Deno.serve(async (req) => {
       results.push({ nis: r.nis, ok: true, email, password });
     }
 
+    await admin.from("audit_logs").insert({
+      actor_id: user.id, actor_email: user.email,
+      action: "bulk_create_students", entity: "student", entity_id: null,
+      detail: { count: rows.length, ok: results.filter((r: any) => r.ok).length },
+    });
+
     return new Response(JSON.stringify({ results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
