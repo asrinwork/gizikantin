@@ -403,7 +403,13 @@ export type Database = {
       today_calories: { Args: { _student_id: string }; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "guru" | "kantin" | "siswa"
+      app_role:
+        | "admin"
+        | "guru"
+        | "kantin"
+        | "siswa"
+        | "wali_kelas"
+        | "kepala_sekolah"
       order_status: "pending" | "ready" | "completed" | "cancelled"
     }
     CompositeTypes: {
@@ -532,7 +538,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "guru", "kantin", "siswa"],
+      app_role: [
+        "admin",
+        "guru",
+        "kantin",
+        "siswa",
+        "wali_kelas",
+        "kepala_sekolah",
+      ],
       order_status: ["pending", "ready", "completed", "cancelled"],
     },
   },
