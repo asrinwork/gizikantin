@@ -17,6 +17,7 @@ import {
   BarChart3,
   UserCircle,
   Package,
+  ScrollText,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -33,13 +34,14 @@ const NAV: NavItem[] = [
   { to: "/pesanan-masuk", label: "Pesanan Masuk", icon: Package, roles: ["kantin", "admin"] },
   { to: "/transaksi", label: "Kasir POS", icon: ShoppingCart, roles: ["kantin", "admin"] },
   { to: "/makanan", label: "Menu Makanan", icon: Utensils, roles: ["kantin", "admin"] },
-  // Guru/Admin
-  { to: "/grafik", label: "Grafik & Alert", icon: BarChart3, roles: ["guru", "admin"] },
-  // Admin
-  { to: "/siswa", label: "Data Siswa", icon: Users, roles: ["admin"] },
+  // Monitoring (Guru/Wali/Kepsek/Admin)
+  { to: "/grafik", label: "Grafik & Alert", icon: BarChart3, roles: ["guru", "wali_kelas", "kepala_sekolah", "admin"] },
+  { to: "/siswa", label: "Data Siswa", icon: Users, roles: ["guru", "wali_kelas", "kepala_sekolah", "admin"] },
+  // Admin only
   { to: "/kelas", label: "Kelas", icon: School, roles: ["admin"] },
   { to: "/users", label: "User & Peran", icon: UserCog, roles: ["admin"] },
   { to: "/target", label: "Target Gizi", icon: Target, roles: ["admin"] },
+  { to: "/audit", label: "Audit Log", icon: ScrollText, roles: ["admin"] },
 ];
 
 export const AppLayout = () => {
