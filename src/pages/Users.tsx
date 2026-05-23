@@ -170,10 +170,10 @@ const Users = () => {
       </div>
 
       <Card className="shadow-soft">
-        <CardHeader><CardTitle>Pengguna & Peran ({Object.keys(grouped).length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Pengguna & Peran ({Object.keys(staffGrouped).length})</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {Object.entries(grouped).map(([uid, roles]) => {
+            {Object.entries(staffGrouped).map(([uid, roles]) => {
               const p = profiles[uid];
               const isGuru = roles.includes("guru");
               const access = teacherAccess[uid] ?? [];
