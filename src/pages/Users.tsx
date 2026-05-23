@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Upload, Shield, Loader2 } from "lucide-react";
+import { Plus, Upload, Shield, Loader2, KeyRound, Copy } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { parseCSV } from "@/lib/csv";
 
@@ -38,6 +38,13 @@ const Users = () => {
   const [accessOpen, setAccessOpen] = useState(false);
   const [accessFor, setAccessFor] = useState<string | null>(null);
   const [accessSel, setAccessSel] = useState<string[]>([]);
+
+  // reset password dialog
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetFor, setResetFor] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [resetMode, setResetMode] = useState<"auto" | "manual">("auto");
+  const [resetPwd, setResetPwd] = useState("");
+  const [resetResult, setResetResult] = useState<string | null>(null);
 
   const load = async () => {
     const [{ data: r }, { data: p }, { data: c }, { data: tca }] = await Promise.all([
@@ -115,10 +122,31 @@ const Users = () => {
     toast.success("Akses tersimpan"); setAccessOpen(false); load();
   };
 
+  // exclude pure-siswa accounts (siswa cannot hold other staff roles)
   const grouped = rows.reduce<Record<string, Role[]>>((acc, r) => {
     (acc[r.user_id] ??= []).push(r.role);
     return acc;
   }, {});
+  const staffGrouped = Object.fromEntries(
+    Object.entries(grouped).filter(([, rs]) => rs.some((r) => r !== "siswa"))
+  );
+
+  const openReset = (uid: string) => {
+    const p = profiles[uid];
+    setResetFor({ id: uid, name: p?.full_name || "(tanpa nama)", email: p?.email || "" });
+    setResetMode("auto"); setResetPwd(""); setResetResult(null); setResetOpen(true);
+  };
+  const runReset = async () => {
+    if (!resetFor) return;
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+      body: { user_id: resetFor.id, password: resetMode === "manual" ? resetPwd : undefined },
+    });
+    setBusy(false);
+    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message);
+    setResetResult((data as any).password);
+    toast.success("Password berhasil direset");
+  };
 
   const downloadTemplate = () => {
     const t = "email,password,full_name,role,class_names\nguru1@sekolah.id,Pass#1234,Budi Santoso,guru,\"7A,7B\"\nwali7a@sekolah.id,Pass#1234,Siti Wali,wali_kelas,7A\nkepsek@sekolah.id,Pass#1234,Pak Kepsek,kepala_sekolah,\nkantin1@sekolah.id,Pass#1234,Ibu Kantin,kantin,\n";
@@ -142,10 +170,10 @@ const Users = () => {
       </div>
 
       <Card className="shadow-soft">
-        <CardHeader><CardTitle>Pengguna & Peran ({Object.keys(grouped).length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Pengguna & Peran ({Object.keys(staffGrouped).length})</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {Object.entries(grouped).map(([uid, roles]) => {
+            {Object.entries(staffGrouped).map(([uid, roles]) => {
               const p = profiles[uid];
               const isGuru = roles.includes("guru");
               const access = teacherAccess[uid] ?? [];
@@ -174,10 +202,13 @@ const Users = () => {
                         <Shield className="h-3.5 w-3.5 mr-1" /> Hak Akses Kelas
                       </Button>
                     )}
+                    <Button size="sm" variant="outline" onClick={() => openReset(uid)}>
+                      <KeyRound className="h-3.5 w-3.5 mr-1" /> Reset Password
+                    </Button>
                     <Select onValueChange={(v) => addRole(uid, v as Role)}>
                       <SelectTrigger className="w-40"><SelectValue placeholder="+ Tambah peran" /></SelectTrigger>
                       <SelectContent>
-                        {(["admin","guru","wali_kelas","kepala_sekolah","kantin","siswa"] as Role[]).filter((r) => !roles.includes(r)).map((r) => (
+                        {(["admin","guru","wali_kelas","kepala_sekolah","kantin"] as Role[]).filter((r) => !roles.includes(r)).map((r) => (
                           <SelectItem key={r} value={r} className="capitalize">{r.replace("_"," ")}</SelectItem>
                         ))}
                       </SelectContent>
@@ -186,7 +217,7 @@ const Users = () => {
                 </div>
               );
             })}
-            {Object.keys(grouped).length === 0 && <p className="text-center py-8 text-muted-foreground">Belum ada user.</p>}
+            {Object.keys(staffGrouped).length === 0 && <p className="text-center py-8 text-muted-foreground">Belum ada user staff.</p>}
           </div>
         </CardContent>
       </Card>
@@ -292,6 +323,55 @@ const Users = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setAccessOpen(false)}>Batal</Button>
             <Button onClick={saveAccess}>Simpan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset password */}
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              {resetFor ? <>Akun: <b>{resetFor.name}</b> ({resetFor.email})</> : null}
+            </DialogDescription>
+          </DialogHeader>
+          {!resetResult ? (
+            <div className="space-y-3">
+              <div className="flex gap-2 text-sm">
+                <label className="flex items-center gap-1.5"><input type="radio" checked={resetMode === "auto"} onChange={() => setResetMode("auto")} /> Buat password acak</label>
+                <label className="flex items-center gap-1.5"><input type="radio" checked={resetMode === "manual"} onChange={() => setResetMode("manual")} /> Tentukan sendiri</label>
+              </div>
+              {resetMode === "manual" && (
+                <div>
+                  <Label>Password Baru (min 6)</Label>
+                  <Input type="text" minLength={6} value={resetPwd} onChange={(e) => setResetPwd(e.target.value)} />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Password lama tidak dapat dilihat. Setelah direset, password baru akan ditampilkan satu kali — pastikan disampaikan ke pengguna.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Password baru (catat sekarang)</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={resetResult} className="font-mono" />
+                <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(resetResult); toast.success("Disalin"); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {!resetResult ? (
+              <>
+                <Button variant="outline" onClick={() => setResetOpen(false)}>Batal</Button>
+                <Button onClick={runReset} disabled={busy || (resetMode === "manual" && resetPwd.length < 6)}>
+                  {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Reset
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setResetOpen(false)}>Selesai</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
