@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Upload, Shield, Loader2 } from "lucide-react";
+import { Plus, Upload, Shield, Loader2, KeyRound, Copy } from "lucide-react";
 import { logAudit } from "@/lib/audit";
 import { parseCSV } from "@/lib/csv";
 
