@@ -12,6 +12,7 @@ import { StudentBarcode } from "@/components/StudentBarcode";
 import { downloadStudentBarcodePNG, downloadBulkBarcodesPDF } from "@/lib/barcode-pdf";
 import { StudentImportDialog } from "@/components/StudentImportDialog";
 import { ACTIVITY_LABEL, type ActivityLevel } from "@/lib/calorie";
+import { DataTable } from "@/components/DataTable";
 
 interface ClassRow { id: string; name: string; }
 interface Student {
@@ -117,40 +118,31 @@ const Students = () => {
       <Card className="shadow-soft">
         <CardHeader><CardTitle>Daftar Siswa ({list.length})</CardTitle></CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-4">NIS</th>
-                  <th className="py-2 pr-4">Nama</th>
-                  <th className="py-2 pr-4">Kelas</th>
-                  <th className="py-2 pr-4">JK</th>
-                  <th className="py-2 pr-4">TB/BB</th>
-                  <th className="py-2 pr-4">Akun</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {list.map(s => (
-                  <tr key={s.id} className="border-b hover:bg-muted/40">
-                    <td className="py-2 pr-4 font-mono text-xs">{s.nis}</td>
-                    <td className="py-2 pr-4 font-medium">{s.full_name}</td>
-                    <td className="py-2 pr-4">{s.class_name}</td>
-                    <td className="py-2 pr-4">{s.gender === "P" ? "P" : "L"}</td>
-                    <td className="py-2 pr-4 text-xs">{s.height_cm ?? "-"}/{s.weight_kg ?? "-"}</td>
-                    <td className="py-2 pr-4">{(s as any).user_id ? <span className="text-success text-xs">✓</span> : <span className="text-muted-foreground text-xs">—</span>}</td>
-                    <td className="py-2 text-right whitespace-nowrap">
-                      <Button size="icon" variant="ghost" title="Lihat QR" onClick={() => setBarcodeStudent(s)}><QrCode className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" title="Unduh QR" onClick={() => downloadStudentBarcodePNG(s)}><Download className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </td>
-                  </tr>
-                ))}
-                {list.length === 0 && <tr><td colSpan={7} className="text-center py-8 text-muted-foreground">Belum ada siswa.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            data={list}
+            rowKey={(s) => s.id}
+            searchPlaceholder="Cari NIS, nama, atau kelas..."
+            emptyMessage="Belum ada siswa."
+            columns={[
+              { key: "nis", header: "NIS", accessor: (s) => s.nis, cell: (s) => <span className="font-mono text-xs">{s.nis}</span> },
+              { key: "full_name", header: "Nama", accessor: (s) => s.full_name, cell: (s) => <span className="font-medium">{s.full_name}</span> },
+              { key: "class_name", header: "Kelas", accessor: (s) => s.class_name, cell: (s) => s.class_name },
+              { key: "gender", header: "JK", accessor: (s) => s.gender ?? "", cell: (s) => (s.gender === "P" ? "P" : "L") },
+              { key: "tbbb", header: "TB/BB", accessor: (s) => s.height_cm ?? 0, cell: (s) => <span className="text-xs">{s.height_cm ?? "-"}/{s.weight_kg ?? "-"}</span> },
+              { key: "akun", header: "Akun", accessor: (s) => ((s as any).user_id ? "1" : "0"), cell: (s) => (s as any).user_id ? <span className="text-success text-xs">✓</span> : <span className="text-muted-foreground text-xs">—</span> },
+              {
+                key: "act", header: "", sortable: false, align: "right",
+                cell: (s) => (
+                  <div className="whitespace-nowrap">
+                    <Button size="icon" variant="ghost" title="Lihat QR" onClick={() => setBarcodeStudent(s)}><QrCode className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title="Unduh QR" onClick={() => downloadStudentBarcodePNG(s)}><Download className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </CardContent>
       </Card>
 

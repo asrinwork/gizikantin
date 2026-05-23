@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { logAudit } from "@/lib/audit";
+import { DataTable } from "@/components/DataTable";
 
 interface ClassRow { id: string; name: string; grade_level: number | null; homeroom_teacher_id: string | null; }
 interface Teacher { id: string; full_name: string; email: string | null; }
@@ -76,30 +77,37 @@ const Classes = () => {
       <Card className="shadow-soft">
         <CardHeader><CardTitle>Daftar Kelas ({list.length})</CardTitle></CardHeader>
         <CardContent>
-          <table className="w-full text-sm">
-            <thead><tr className="border-b text-left text-muted-foreground"><th className="py-2">Nama</th><th className="py-2">Tingkat</th><th className="py-2">Wali Kelas</th><th></th></tr></thead>
-            <tbody>
-              {list.map((c) => {
-                const t = teachers.find((x) => x.id === c.homeroom_teacher_id);
-                return (
-                  <tr key={c.id} className="border-b hover:bg-muted/40">
-                    <td className="py-2 font-medium">{c.name}</td>
-                    <td className="py-2">{c.grade_level ?? "-"}</td>
-                    <td className="py-2">{t ? <Badge variant="secondary">{t.full_name}</Badge> : <span className="text-muted-foreground">—</span>}</td>
-                    <td className="py-2 text-right">
-                      <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setForm({ name: c.name, grade_level: c.grade_level?.toString() ?? "", homeroom_teacher_id: c.homeroom_teacher_id ?? "none" }); setOpen(true); }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {list.length === 0 && <tr><td colSpan={4} className="text-center py-8 text-muted-foreground">Belum ada kelas.</td></tr>}
-            </tbody>
-          </table>
+          <DataTable
+            data={list}
+            rowKey={(c) => c.id}
+            searchPlaceholder="Cari kelas atau wali..."
+            emptyMessage="Belum ada kelas."
+            columns={[
+              { key: "name", header: "Nama", accessor: (c) => c.name, cell: (c) => <span className="font-medium">{c.name}</span> },
+              { key: "grade", header: "Tingkat", accessor: (c) => c.grade_level ?? 0, cell: (c) => c.grade_level ?? "-" },
+              {
+                key: "wali", header: "Wali Kelas",
+                accessor: (c) => teachers.find((x) => x.id === c.homeroom_teacher_id)?.full_name ?? "",
+                cell: (c) => {
+                  const t = teachers.find((x) => x.id === c.homeroom_teacher_id);
+                  return t ? <Badge variant="secondary">{t.full_name}</Badge> : <span className="text-muted-foreground">—</span>;
+                },
+              },
+              {
+                key: "act", header: "", sortable: false, align: "right",
+                cell: (c) => (
+                  <div className="whitespace-nowrap">
+                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setForm({ name: c.name, grade_level: c.grade_level?.toString() ?? "", homeroom_teacher_id: c.homeroom_teacher_id ?? "none" }); setOpen(true); }}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </CardContent>
       </Card>
 
