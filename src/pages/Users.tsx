@@ -39,6 +39,13 @@ const Users = () => {
   const [accessFor, setAccessFor] = useState<string | null>(null);
   const [accessSel, setAccessSel] = useState<string[]>([]);
 
+  // reset password dialog
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetFor, setResetFor] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [resetMode, setResetMode] = useState<"auto" | "manual">("auto");
+  const [resetPwd, setResetPwd] = useState("");
+  const [resetResult, setResetResult] = useState<string | null>(null);
+
   const load = async () => {
     const [{ data: r }, { data: p }, { data: c }, { data: tca }] = await Promise.all([
       supabase.from("user_roles").select("user_id,role").order("role"),
