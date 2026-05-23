@@ -12,6 +12,7 @@ import { StudentBarcode } from "@/components/StudentBarcode";
 import { downloadStudentBarcodePNG, downloadBulkBarcodesPDF } from "@/lib/barcode-pdf";
 import { StudentImportDialog } from "@/components/StudentImportDialog";
 import { ACTIVITY_LABEL, type ActivityLevel } from "@/lib/calorie";
+import { DataTable } from "@/components/DataTable";
 
 interface ClassRow { id: string; name: string; }
 interface Student {

@@ -12,6 +12,7 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatNum } from "@/lib/nutrition";
 import { logAudit } from "@/lib/audit";
+import { DataTable } from "@/components/DataTable";
 
 interface Food {
   id: string;
@@ -80,40 +81,30 @@ const Foods = () => {
       <Card className="shadow-soft">
         <CardHeader><CardTitle>Daftar Menu ({foods.length})</CardTitle></CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-4">Nama</th>
-                  <th className="py-2 pr-4">Kal</th>
-                  <th className="py-2 pr-4">Prot</th>
-                  <th className="py-2 pr-4">Karbo</th>
-                  <th className="py-2 pr-4">Lemak</th>
-                  <th className="py-2 pr-4">Gula</th>
-                  <th className="py-2 pr-4">Harga</th>
-                  <th className="py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {foods.map(f => (
-                  <tr key={f.id} className="border-b hover:bg-muted/40">
-                    <td className="py-2 pr-4 font-medium">{f.name}</td>
-                    <td className="py-2 pr-4">{formatNum(f.calories,0)}</td>
-                    <td className="py-2 pr-4">{formatNum(f.protein)}</td>
-                    <td className="py-2 pr-4">{formatNum(f.carbs)}</td>
-                    <td className="py-2 pr-4">{formatNum(f.fat)}</td>
-                    <td className="py-2 pr-4">{formatNum(f.sugar)}</td>
-                    <td className="py-2 pr-4">Rp{formatNum(f.price,0)}</td>
-                    <td className="py-2 text-right whitespace-nowrap">
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(f)}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                    </td>
-                  </tr>
-                ))}
-                {foods.length === 0 && <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">Belum ada makanan.</td></tr>}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            data={foods}
+            rowKey={(f) => f.id}
+            searchPlaceholder="Cari makanan..."
+            emptyMessage="Belum ada makanan."
+            columns={[
+              { key: "name", header: "Nama", accessor: (f) => f.name, cell: (f) => <span className="font-medium">{f.name}</span> },
+              { key: "calories", header: "Kal", accessor: (f) => f.calories, cell: (f) => formatNum(f.calories, 0) },
+              { key: "protein", header: "Prot", accessor: (f) => f.protein, cell: (f) => formatNum(f.protein) },
+              { key: "carbs", header: "Karbo", accessor: (f) => f.carbs, cell: (f) => formatNum(f.carbs) },
+              { key: "fat", header: "Lemak", accessor: (f) => f.fat, cell: (f) => formatNum(f.fat) },
+              { key: "sugar", header: "Gula", accessor: (f) => f.sugar, cell: (f) => formatNum(f.sugar) },
+              { key: "price", header: "Harga", accessor: (f) => f.price, cell: (f) => `Rp${formatNum(f.price, 0)}` },
+              {
+                key: "act", header: "", sortable: false, align: "right",
+                cell: (f) => (
+                  <div className="whitespace-nowrap">
+                    <Button size="icon" variant="ghost" onClick={() => startEdit(f)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => remove(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                ),
+              },
+            ]}
+          />
         </CardContent>
       </Card>
 
