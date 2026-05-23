@@ -202,10 +202,13 @@ const Users = () => {
                         <Shield className="h-3.5 w-3.5 mr-1" /> Hak Akses Kelas
                       </Button>
                     )}
+                    <Button size="sm" variant="outline" onClick={() => openReset(uid)}>
+                      <KeyRound className="h-3.5 w-3.5 mr-1" /> Reset Password
+                    </Button>
                     <Select onValueChange={(v) => addRole(uid, v as Role)}>
                       <SelectTrigger className="w-40"><SelectValue placeholder="+ Tambah peran" /></SelectTrigger>
                       <SelectContent>
-                        {(["admin","guru","wali_kelas","kepala_sekolah","kantin","siswa"] as Role[]).filter((r) => !roles.includes(r)).map((r) => (
+                        {(["admin","guru","wali_kelas","kepala_sekolah","kantin"] as Role[]).filter((r) => !roles.includes(r)).map((r) => (
                           <SelectItem key={r} value={r} className="capitalize">{r.replace("_"," ")}</SelectItem>
                         ))}
                       </SelectContent>
@@ -214,7 +217,7 @@ const Users = () => {
                 </div>
               );
             })}
-            {Object.keys(grouped).length === 0 && <p className="text-center py-8 text-muted-foreground">Belum ada user.</p>}
+            {Object.keys(staffGrouped).length === 0 && <p className="text-center py-8 text-muted-foreground">Belum ada user staff.</p>}
           </div>
         </CardContent>
       </Card>
