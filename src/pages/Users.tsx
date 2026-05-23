@@ -122,10 +122,31 @@ const Users = () => {
     toast.success("Akses tersimpan"); setAccessOpen(false); load();
   };
 
+  // exclude pure-siswa accounts (siswa cannot hold other staff roles)
   const grouped = rows.reduce<Record<string, Role[]>>((acc, r) => {
     (acc[r.user_id] ??= []).push(r.role);
     return acc;
   }, {});
+  const staffGrouped = Object.fromEntries(
+    Object.entries(grouped).filter(([, rs]) => rs.some((r) => r !== "siswa"))
+  );
+
+  const openReset = (uid: string) => {
+    const p = profiles[uid];
+    setResetFor({ id: uid, name: p?.full_name || "(tanpa nama)", email: p?.email || "" });
+    setResetMode("auto"); setResetPwd(""); setResetResult(null); setResetOpen(true);
+  };
+  const runReset = async () => {
+    if (!resetFor) return;
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-reset-password", {
+      body: { user_id: resetFor.id, password: resetMode === "manual" ? resetPwd : undefined },
+    });
+    setBusy(false);
+    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message);
+    setResetResult((data as any).password);
+    toast.success("Password berhasil direset");
+  };
 
   const downloadTemplate = () => {
     const t = "email,password,full_name,role,class_names\nguru1@sekolah.id,Pass#1234,Budi Santoso,guru,\"7A,7B\"\nwali7a@sekolah.id,Pass#1234,Siti Wali,wali_kelas,7A\nkepsek@sekolah.id,Pass#1234,Pak Kepsek,kepala_sekolah,\nkantin1@sekolah.id,Pass#1234,Ibu Kantin,kantin,\n";
