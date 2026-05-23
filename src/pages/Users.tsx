@@ -326,6 +326,55 @@ const Users = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Reset password */}
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              {resetFor ? <>Akun: <b>{resetFor.name}</b> ({resetFor.email})</> : null}
+            </DialogDescription>
+          </DialogHeader>
+          {!resetResult ? (
+            <div className="space-y-3">
+              <div className="flex gap-2 text-sm">
+                <label className="flex items-center gap-1.5"><input type="radio" checked={resetMode === "auto"} onChange={() => setResetMode("auto")} /> Buat password acak</label>
+                <label className="flex items-center gap-1.5"><input type="radio" checked={resetMode === "manual"} onChange={() => setResetMode("manual")} /> Tentukan sendiri</label>
+              </div>
+              {resetMode === "manual" && (
+                <div>
+                  <Label>Password Baru (min 6)</Label>
+                  <Input type="text" minLength={6} value={resetPwd} onChange={(e) => setResetPwd(e.target.value)} />
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">Password lama tidak dapat dilihat. Setelah direset, password baru akan ditampilkan satu kali — pastikan disampaikan ke pengguna.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Password baru (catat sekarang)</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={resetResult} className="font-mono" />
+                <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(resetResult); toast.success("Disalin"); }}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {!resetResult ? (
+              <>
+                <Button variant="outline" onClick={() => setResetOpen(false)}>Batal</Button>
+                <Button onClick={runReset} disabled={busy || (resetMode === "manual" && resetPwd.length < 6)}>
+                  {busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Reset
+                </Button>
+              </>
+            ) : (
+              <Button onClick={() => setResetOpen(false)}>Selesai</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
