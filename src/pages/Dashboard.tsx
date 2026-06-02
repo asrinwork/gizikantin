@@ -136,8 +136,10 @@ const Dashboard = () => {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map(s => {
               const tot = totalsForStudent(s.id, txToday);
+              const target = targetFor(s);
               const st = overallStatus(tot, target);
               const pct = Math.min(200, target.calories > 0 ? (tot.calories / target.calories) * 100 : 0);
+
               return (
                 <Dialog key={s.id} onOpenChange={(o) => !o && setDetailStudent(null)}>
                   <DialogTrigger asChild>
