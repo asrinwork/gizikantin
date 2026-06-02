@@ -89,8 +89,8 @@ BEGIN
     RETURN (SELECT calories FROM public.nutrition_targets WHERE is_active LIMIT 1);
   END IF;
   bmr := f.coef_weight * s.weight_kg + f.coef_height * s.height_cm + f.constant;
-  SELECT factor INTO factor FROM public.activity_factors
-    WHERE key = COALESCE(s.activity_level,'light') LIMIT 1;
+  SELECT a.factor INTO factor FROM public.activity_factors a
+    WHERE a.key = COALESCE(s.activity_level,'light') LIMIT 1;
   IF factor IS NULL THEN factor := 1.375; END IF;
   RETURN ROUND(bmr * factor);
 END $function$;
