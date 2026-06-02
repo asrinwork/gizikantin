@@ -172,8 +172,8 @@ const Dashboard = () => {
                         <div className="rounded-xl gradient-soft p-4">
                           <p className="text-xs uppercase text-muted-foreground font-semibold">Status hari ini</p>
                           <div className="mt-1 flex items-center gap-2">
-                            <Badge className={statusColor(overallStatus(detailTotals, target))}>
-                              {statusEmoji(overallStatus(detailTotals, target))} {statusLabel(overallStatus(detailTotals, target))}
+                            <Badge className={statusColor(overallStatus(detailTotals, detailTarget))}>
+                              {statusEmoji(overallStatus(detailTotals, detailTarget))} {statusLabel(overallStatus(detailTotals, detailTarget))}
                             </Badge>
                           </div>
                         </div>
@@ -181,7 +181,7 @@ const Dashboard = () => {
                         <div className="space-y-3">
                           {(["calories","protein","carbs","fat","sugar"] as const).map(k => {
                             const labels: any = { calories: "Kalori (kkal)", protein: "Protein (g)", carbs: "Karbohidrat (g)", fat: "Lemak (g)", sugar: "Gula (g)" };
-                            const v = detailTotals[k]; const tg = target[k];
+                            const v = detailTotals[k]; const tg = detailTarget[k];
                             const pct = tg > 0 ? Math.min(150, (v / tg) * 100) : 0;
                             const st2 = computeStatus(v, tg);
                             return (
