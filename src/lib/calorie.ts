@@ -1,16 +1,58 @@
-// Mifflin-St Jeor BMR + activity factors + macro distribution
+// Schofield W BMR + activity factors + macro distribution
+// Defaults match: Tabel Schofield (Kkal/hari) = coef_w*BB + coef_h*TB + constant
+// These defaults can be overridden at runtime via loadBmrConfig() which reads
+// from the bmr_formulas / activity_factors tables (admin-editable).
+import { supabase } from "@/integrations/supabase/client";
+
 export type ActivityLevel = "sedentary" | "light" | "moderate" | "active" | "very_active";
 
-export const ACTIVITY_LABEL: Record<ActivityLevel, string> = {
-  sedentary: "Tidak aktif (jarang olahraga)",
-  light: "Ringan (1-3x/minggu)",
-  moderate: "Sedang (3-5x/minggu)",
-  active: "Aktif (6-7x/minggu)",
-  very_active: "Sangat aktif (atlet)",
+export interface BmrFormula {
+  gender: "L" | "P";
+  age_min: number;
+  age_max: number;
+  coef_weight: number;
+  coef_height: number;
+  constant: number;
+  label?: string;
+}
+
+export const DEFAULT_FORMULAS: BmrFormula[] = [
+  { gender: "L", age_min: 0,  age_max: 2,  coef_weight: 0.167, coef_height: 15.174, constant: -617.6, label: "Laki-laki 0-3 thn" },
+  { gender: "L", age_min: 3,  age_max: 9,  coef_weight: 19.59, coef_height: 1.303,  constant: 414.9,  label: "Laki-laki 3-10 thn" },
+  { gender: "L", age_min: 10, age_max: 18, coef_weight: 16.25, coef_height: 1.372,  constant: 515.5,  label: "Laki-laki 10-18 thn" },
+  { gender: "P", age_min: 0,  age_max: 2,  coef_weight: 16.252, coef_height: 10.232, constant: -413.5, label: "Perempuan 0-3 thn" },
+  { gender: "P", age_min: 3,  age_max: 9,  coef_weight: 16.969, coef_height: 1.618,  constant: 371.2,  label: "Perempuan 3-10 thn" },
+  { gender: "P", age_min: 10, age_max: 18, coef_weight: 8.365,  coef_height: 4.65,   constant: 200,    label: "Perempuan 10-18 thn" },
+];
+
+export const DEFAULT_ACTIVITY: Record<ActivityLevel, number> = {
+  sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9,
 };
 
-const FACTOR: Record<ActivityLevel, number> = {
-  sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very_active: 1.9,
+export const ACTIVITY_LABEL: Record<ActivityLevel, string> = {
+  sedentary: "Sangat ringan (jarang olahraga)",
+  light: "Ringan (1-3x/minggu)",
+  moderate: "Sedang (3-5x/minggu)",
+  active: "Sangat aktif (6-7x/minggu)",
+  very_active: "Aktivitas berat (atlet)",
+};
+
+// Module-level dynamic config (hydrated from DB)
+let FORMULAS: BmrFormula[] = DEFAULT_FORMULAS;
+let FACTORS: Record<string, number> = { ...DEFAULT_ACTIVITY };
+
+export const loadBmrConfig = async () => {
+  try {
+    const [{ data: fs }, { data: af }] = await Promise.all([
+      supabase.from("bmr_formulas" as any).select("gender,age_min,age_max,coef_weight,coef_height,constant,label"),
+      supabase.from("activity_factors" as any).select("key,factor"),
+    ]);
+    if (fs && fs.length) FORMULAS = fs as any;
+    if (af && af.length) {
+      FACTORS = {};
+      for (const r of af as any[]) FACTORS[r.key] = Number(r.factor);
+    }
+  } catch { /* keep defaults */ }
 };
 
 export const ageFromBirthdate = (birthDate: string | null | undefined): number => {
@@ -20,28 +62,44 @@ export const ageFromBirthdate = (birthDate: string | null | undefined): number =
   let age = now.getFullYear() - b.getFullYear();
   const m = now.getMonth() - b.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
-  return Math.max(5, age);
+  return Math.max(0, age);
+};
+
+export const pickFormula = (gender: "L" | "P", age: number, formulas: BmrFormula[] = FORMULAS): BmrFormula | null => {
+  const same = formulas.filter((f) => f.gender === gender);
+  const hit = same.find((f) => age >= f.age_min && age <= f.age_max);
+  if (hit) return hit;
+  // fallback: closest by age_max
+  return same.sort((a, b) => b.age_max - a.age_max)[0] ?? null;
+};
+
+export const calcBMR = (p: { gender: "L" | "P"; age: number; height_cm: number; weight_kg: number }, formulas: BmrFormula[] = FORMULAS) => {
+  const f = pickFormula(p.gender, p.age, formulas);
+  if (!f) return 0;
+  return f.coef_weight * p.weight_kg + f.coef_height * p.height_cm + f.constant;
 };
 
 export interface DailyTarget {
   calories: number; protein: number; carbs: number; fat: number; sugar: number;
 }
 
-export const calcDailyTarget = (p: {
-  gender?: "L" | "P" | null;
-  birth_date?: string | null;
-  height_cm?: number | null;
-  weight_kg?: number | null;
-  activity_level?: ActivityLevel | null;
-}, fallback: DailyTarget = { calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 }): DailyTarget => {
+export const calcDailyTarget = (
+  p: {
+    gender?: "L" | "P" | null;
+    birth_date?: string | null;
+    height_cm?: number | null;
+    weight_kg?: number | null;
+    activity_level?: ActivityLevel | null;
+  },
+  fallback: DailyTarget = { calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 },
+): DailyTarget => {
   const { gender, birth_date, height_cm, weight_kg, activity_level } = p;
   if (!height_cm || !weight_kg || !birth_date) return fallback;
   const age = ageFromBirthdate(birth_date);
-  const bmr = gender === "P"
-    ? 10 * weight_kg + 6.25 * height_cm - 5 * age - 161
-    : 10 * weight_kg + 6.25 * height_cm - 5 * age + 5;
-  const calories = Math.round(bmr * FACTOR[activity_level ?? "light"]);
-  // Macro split: protein 15%, carbs 55%, fat 30%, sugar max 10% of calories
+  const bmr = calcBMR({ gender: (gender ?? "L") as "L" | "P", age, height_cm, weight_kg });
+  if (!bmr || bmr <= 0) return fallback;
+  const factor = FACTORS[activity_level ?? "light"] ?? 1.375;
+  const calories = Math.round(bmr * factor);
   return {
     calories,
     protein: Math.round((calories * 0.15) / 4),
@@ -50,3 +108,6 @@ export const calcDailyTarget = (p: {
     sugar: Math.round((calories * 0.10) / 4),
   };
 };
+
+export const getActivityFactors = () => ({ ...FACTORS });
+export const getFormulas = () => [...FORMULAS];
