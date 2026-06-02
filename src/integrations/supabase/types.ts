@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_factors: {
+        Row: {
+          created_at: string
+          factor: number
+          id: string
+          key: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          factor: number
+          id?: string
+          key: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          factor?: number
+          id?: string
+          key?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -44,6 +74,45 @@ export type Database = {
           entity?: string
           entity_id?: string | null
           id?: string
+        }
+        Relationships: []
+      }
+      bmr_formulas: {
+        Row: {
+          age_max: number
+          age_min: number
+          coef_height: number
+          coef_weight: number
+          constant: number
+          created_at: string
+          gender: string
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          age_max: number
+          age_min: number
+          coef_height?: number
+          coef_weight?: number
+          constant?: number
+          created_at?: string
+          gender: string
+          id?: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          age_max?: number
+          age_min?: number
+          coef_height?: number
+          coef_weight?: number
+          constant?: number
+          created_at?: string
+          gender?: string
+          id?: string
+          label?: string
+          updated_at?: string
         }
         Relationships: []
       }
