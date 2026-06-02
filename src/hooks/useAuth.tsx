@@ -46,6 +46,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       loadRoles(session?.user?.id).finally(() => setLoading(false));
     });
 
+    // hydrate BMR formulas + activity factors (admin-editable, cached)
+    loadBmrConfig();
+
     return () => sub.subscription.unsubscribe();
   }, []);
 
