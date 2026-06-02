@@ -86,11 +86,12 @@ const Dashboard = () => {
     let ideal = 0, kurang = 0, berlebih = 0;
     students.forEach(s => {
       const tot = totalsForStudent(s.id, txToday);
-      const st = overallStatus(tot, target);
+      const st = overallStatus(tot, targetFor(s));
       if (st === "ideal") ideal++; else if (st === "kurang") kurang++; else berlebih++;
     });
     return { ideal, kurang, berlebih, total: students.length };
-  }, [students, txToday, foodMap, target]);
+  }, [students, txToday, foodMap, fallbackTarget]);
+
 
   const openDetail = async (s: Student) => {
     setDetailStudent(s);
