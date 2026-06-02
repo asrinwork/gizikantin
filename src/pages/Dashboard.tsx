@@ -12,8 +12,12 @@ import {
   overallStatus, statusColor, statusEmoji, statusLabel,
 } from "@/lib/nutrition";
 import { Search, Users, TrendingUp, AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { calcDailyTarget, loadBmrConfig, ActivityLevel } from "@/lib/calorie";
 
-interface Student { id: string; nis: string; full_name: string; class_name: string; }
+interface Student {
+  id: string; nis: string; full_name: string; class_name: string;
+  gender?: "L"|"P"|null; birth_date?: string|null; height_cm?: number|null; weight_kg?: number|null; activity_level?: ActivityLevel|null;
+}
 interface Food { id: string; name: string; calories: number; protein: number; carbs: number; fat: number; sugar: number; }
 interface Tx { id: string; student_id: string; food_id: string; quantity: number; consumed_at: string; }
 
@@ -27,16 +31,17 @@ const Dashboard = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [foods, setFoods] = useState<Food[]>([]);
   const [txToday, setTxToday] = useState<Tx[]>([]);
-  const [target, setTarget] = useState<NutritionTarget>({ calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 });
+  const [fallbackTarget, setFallbackTarget] = useState<NutritionTarget>({ calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 });
   const [search, setSearch] = useState("");
   const [detailStudent, setDetailStudent] = useState<Student | null>(null);
   const [history, setHistory] = useState<Tx[]>([]);
 
   useEffect(() => {
     const load = async () => {
+      await loadBmrConfig();
       const { start, end } = todayRange();
       const [s, f, t, n] = await Promise.all([
-        supabase.from("students").select("id,nis,full_name,class_name").order("class_name").order("full_name"),
+        supabase.from("students").select("id,nis,full_name,class_name,gender,birth_date,height_cm,weight_kg,activity_level").order("class_name").order("full_name"),
         supabase.from("foods").select("id,name,calories,protein,carbs,fat,sugar"),
         supabase.from("transactions").select("id,student_id,food_id,quantity,consumed_at").gte("consumed_at", start).lte("consumed_at", end),
         supabase.from("nutrition_targets").select("*").eq("is_active", true).order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -44,10 +49,13 @@ const Dashboard = () => {
       setStudents((s.data ?? []) as any);
       setFoods((f.data ?? []) as any);
       setTxToday((t.data ?? []) as any);
-      if (n.data) setTarget({ calories: +n.data.calories, protein: +n.data.protein, carbs: +n.data.carbs, fat: +n.data.fat, sugar: +n.data.sugar });
+      if (n.data) setFallbackTarget({ calories: +n.data.calories, protein: +n.data.protein, carbs: +n.data.carbs, fat: +n.data.fat, sugar: +n.data.sugar });
     };
     load();
   }, []);
+
+  const targetFor = (s: Student): NutritionTarget => calcDailyTarget(s as any, fallbackTarget);
+
 
   const foodMap = useMemo(() => Object.fromEntries(foods.map(f => [f.id, f])), [foods]);
 
