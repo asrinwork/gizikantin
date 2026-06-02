@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { loadBmrConfig } from "@/lib/calorie";
 
 export type AppRole = "admin" | "guru" | "wali_kelas" | "kepala_sekolah" | "kantin" | "siswa";
 
@@ -44,6 +45,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       loadRoles(session?.user?.id).finally(() => setLoading(false));
     });
+
+    // hydrate BMR formulas + activity factors (admin-editable, cached)
+    loadBmrConfig();
 
     return () => sub.subscription.unsubscribe();
   }, []);
