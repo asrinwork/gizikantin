@@ -106,6 +106,8 @@ const Dashboard = () => {
   };
 
   const detailTotals = detailStudent ? totalsForStudent(detailStudent.id, txToday) : null;
+  const detailTarget = detailStudent ? targetFor(detailStudent) : fallbackTarget;
+
 
   return (
     <div className="space-y-6">
