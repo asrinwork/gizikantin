@@ -73,6 +73,39 @@ const Foods = () => {
     load();
   };
 
+  const downloadTemplate = () => {
+    const csv = "name,calories,protein,carbs,fat,sugar,price\nNasi Ayam Goreng,520,28,60,18,2,15000\nJus Jeruk,110,1,26,0,22,8000\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "menu_template.csv"; a.click();
+  };
+
+  const runBulk = async () => {
+    const rows = parseCSV(bulkText);
+    if (!rows.length) return toast.error("CSV kosong / tidak valid");
+    setBulkBusy(true);
+    let ok = 0; const failed: { name: string; error: string }[] = [];
+    for (const r of rows) {
+      const name = (r.name || "").trim();
+      if (!name) { failed.push({ name: "(kosong)", error: "name wajib" }); continue; }
+      const payload = {
+        name,
+        calories: Number(r.calories) || 0,
+        protein: Number(r.protein) || 0,
+        carbs: Number(r.carbs) || 0,
+        fat: Number(r.fat) || 0,
+        sugar: Number(r.sugar) || 0,
+        price: Number(r.price) || 0,
+        created_by: user?.id,
+      };
+      const { error } = await supabase.from("foods").insert(payload);
+      if (error) failed.push({ name, error: error.message }); else ok++;
+    }
+    setBulkBusy(false);
+    setBulkResults({ ok, failed });
+    if (ok) { await logAudit("bulk_create_foods", "food", null, { ok, failed: failed.length }); toast.success(`${ok} menu ditambahkan`); load(); }
+    if (failed.length && !ok) toast.error(`${failed.length} baris gagal`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -80,7 +113,12 @@ const Foods = () => {
           <h1 className="text-3xl font-bold">Data Makanan</h1>
           <p className="text-muted-foreground">Kelola menu kantin dan informasi gizinya</p>
         </div>
-        <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Makanan</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setBulkText(""); setBulkResults(null); setBulkOpen(true); }}>
+            <Upload className="h-4 w-4 mr-2" />Import CSV
+          </Button>
+          <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Makanan</Button>
+        </div>
       </div>
 
       <Card className="shadow-soft">
