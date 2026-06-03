@@ -171,6 +171,38 @@ const Foods = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Import CSV Menu</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Kolom: <code>name,calories,protein,carbs,fat,sugar,price</code>
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+              <Download className="h-4 w-4 mr-2" />Unduh template
+            </Button>
+            <textarea
+              className="w-full h-40 rounded-md border border-input bg-background p-2 font-mono text-xs"
+              placeholder="name,calories,protein,carbs,fat,sugar,price"
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+            />
+            {bulkResults && (
+              <div className="rounded-md border p-2 max-h-40 overflow-auto text-xs space-y-0.5">
+                <div className="text-emerald-700 font-medium">Berhasil: {bulkResults.ok}</div>
+                {bulkResults.failed.map((f, i) => (
+                  <div key={i} className="text-destructive">{f.name} — {f.error}</div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>Tutup</Button>
+            <Button onClick={runBulk} disabled={bulkBusy}>{bulkBusy ? "Memproses..." : "Proses"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
