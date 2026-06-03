@@ -31,6 +31,7 @@ const NAV: NavItem[] = [
   { to: "/menu", label: "Pesan Makanan", icon: Utensils, roles: ["siswa"] },
   { to: "/orders", label: "Pesananku", icon: ClipboardList, roles: ["siswa"] },
   { to: "/profil", label: "Profil", icon: UserCircle, roles: ["siswa"] },
+  { to: "/edukasi", label: "Edukasi Gizi", icon: BookOpen },
   // Kantin
   { to: "/pesanan-masuk", label: "Pesanan Masuk", icon: Package, roles: ["kantin", "admin"] },
   { to: "/transaksi", label: "Kasir POS", icon: ShoppingCart, roles: ["kantin", "admin"] },
