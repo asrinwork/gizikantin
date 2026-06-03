@@ -240,7 +240,7 @@ const Users = () => {
           <form onSubmit={createUser} className="space-y-3">
             <div><Label>Nama Lengkap</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
             <div><Label>Email</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label>Password</Label><Input type="text" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+            <div><Label>Password <span className="text-xs text-muted-foreground">(opsional — otomatis bila kosong)</span></Label><Input type="text" minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Kosongkan untuk generate otomatis" /></div>
             <div>
               <Label>Peran</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as Role, class_ids: [], homeroom_class_id: "" })}>
