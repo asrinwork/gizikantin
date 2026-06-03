@@ -48,6 +48,7 @@ const App = () => (
               <Route path="/menu" element={<ProtectedRoute roles={["siswa"]}><StudentMenu /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute roles={["siswa"]}><StudentOrders /></ProtectedRoute>} />
               <Route path="/profil" element={<ProtectedRoute roles={["siswa"]}><StudentProfile /></ProtectedRoute>} />
+              <Route path="/edukasi" element={<Education />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
