@@ -184,6 +184,45 @@ export type Database = {
           },
         ]
       }
+      education_content: {
+        Row: {
+          author_id: string | null
+          body: string
+          category: string
+          cover_url: string | null
+          created_at: string
+          id: string
+          published: boolean
+          summary: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean
+          summary?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          category?: string
+          cover_url?: string | null
+          created_at?: string
+          id?: string
+          published?: boolean
+          summary?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       foods: {
         Row: {
           calories: number
