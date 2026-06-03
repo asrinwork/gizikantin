@@ -36,15 +36,18 @@ Deno.serve(async (req) => {
     if (!isAdmin) return new Response(JSON.stringify({ error: "Admin only" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = (await req.json()) as Body;
-    if (!body.email || !body.password || !body.full_name || !body.role) {
-      return new Response(JSON.stringify({ error: "email/password/full_name/role wajib" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!body.email || !body.full_name || !body.role) {
+      return new Response(JSON.stringify({ error: "email/full_name/role wajib" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const password = body.password && body.password.length >= 6
+      ? body.password
+      : (crypto.randomUUID().replace(/-/g, "").slice(0, 10) + "A!");
 
     const admin = createClient(url, serviceKey, { auth: { persistSession: false } });
 
     const { data: created, error: ce } = await admin.auth.admin.createUser({
       email: body.email,
-      password: body.password,
+      password,
       email_confirm: true,
       user_metadata: { full_name: body.full_name, role: body.role },
     });
