@@ -46,7 +46,9 @@ Deno.serve(async (req) => {
     const results: any[] = [];
     for (const r of rows) {
       if (!r.email || !r.full_name || !r.role) { results.push({ email: r.email, ok: false, error: "email/full_name/role wajib" }); continue; }
-      const password = r.password && r.password.length >= 6 ? r.password : "Sekolah#123";
+      const password = r.password && r.password.length >= 6
+        ? r.password
+        : (crypto.randomUUID().replace(/-/g, "").slice(0, 10) + "A!");
       const { data: created, error: ce } = await admin.auth.admin.createUser({
         email: r.email, password, email_confirm: true,
         user_metadata: { full_name: r.full_name, role: r.role },

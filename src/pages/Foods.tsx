@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatNum } from "@/lib/nutrition";
 import { logAudit } from "@/lib/audit";
 import { DataTable } from "@/components/DataTable";
+import { parseCSV } from "@/lib/csv";
 
 interface Food {
   id: string;
@@ -28,6 +29,10 @@ const Foods = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
   const [form, setForm] = useState<any>(empty);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResults, setBulkResults] = useState<{ ok: number; failed: { name: string; error: string }[] } | null>(null);
 
   const load = async () => {
     const { data } = await supabase.from("foods").select("*").order("name");
@@ -68,6 +73,39 @@ const Foods = () => {
     load();
   };
 
+  const downloadTemplate = () => {
+    const csv = "name,calories,protein,carbs,fat,sugar,price\nNasi Ayam Goreng,520,28,60,18,2,15000\nJus Jeruk,110,1,26,0,22,8000\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "menu_template.csv"; a.click();
+  };
+
+  const runBulk = async () => {
+    const rows = parseCSV(bulkText);
+    if (!rows.length) return toast.error("CSV kosong / tidak valid");
+    setBulkBusy(true);
+    let ok = 0; const failed: { name: string; error: string }[] = [];
+    for (const r of rows) {
+      const name = (r.name || "").trim();
+      if (!name) { failed.push({ name: "(kosong)", error: "name wajib" }); continue; }
+      const payload = {
+        name,
+        calories: Number(r.calories) || 0,
+        protein: Number(r.protein) || 0,
+        carbs: Number(r.carbs) || 0,
+        fat: Number(r.fat) || 0,
+        sugar: Number(r.sugar) || 0,
+        price: Number(r.price) || 0,
+        created_by: user?.id,
+      };
+      const { error } = await supabase.from("foods").insert(payload);
+      if (error) failed.push({ name, error: error.message }); else ok++;
+    }
+    setBulkBusy(false);
+    setBulkResults({ ok, failed });
+    if (ok) { await logAudit("bulk_create_foods", "food", null, { ok, failed: failed.length }); toast.success(`${ok} menu ditambahkan`); load(); }
+    if (failed.length && !ok) toast.error(`${failed.length} baris gagal`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -75,7 +113,12 @@ const Foods = () => {
           <h1 className="text-3xl font-bold">Data Makanan</h1>
           <p className="text-muted-foreground">Kelola menu kantin dan informasi gizinya</p>
         </div>
-        <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Makanan</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => { setBulkText(""); setBulkResults(null); setBulkOpen(true); }}>
+            <Upload className="h-4 w-4 mr-2" />Import CSV
+          </Button>
+          <Button onClick={startNew}><Plus className="h-4 w-4 mr-2" />Tambah Makanan</Button>
+        </div>
       </div>
 
       <Card className="shadow-soft">
@@ -126,6 +169,38 @@ const Foods = () => {
               <Button type="submit">Simpan</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Import CSV Menu</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Kolom: <code>name,calories,protein,carbs,fat,sugar,price</code>
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+              <Download className="h-4 w-4 mr-2" />Unduh template
+            </Button>
+            <textarea
+              className="w-full h-40 rounded-md border border-input bg-background p-2 font-mono text-xs"
+              placeholder="name,calories,protein,carbs,fat,sugar,price"
+              value={bulkText}
+              onChange={(e) => setBulkText(e.target.value)}
+            />
+            {bulkResults && (
+              <div className="rounded-md border p-2 max-h-40 overflow-auto text-xs space-y-0.5">
+                <div className="text-emerald-700 font-medium">Berhasil: {bulkResults.ok}</div>
+                {bulkResults.failed.map((f, i) => (
+                  <div key={i} className="text-destructive">{f.name} — {f.error}</div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkOpen(false)}>Tutup</Button>
+            <Button onClick={runBulk} disabled={bulkBusy}>{bulkBusy ? "Memproses..." : "Proses"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

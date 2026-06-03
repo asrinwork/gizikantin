@@ -83,15 +83,26 @@ const Users = () => {
     setBusy(true);
     const { data, error } = await supabase.functions.invoke("admin-create-user", {
       body: {
-        email: form.email, password: form.password, full_name: form.full_name, role: form.role,
+        email: form.email, password: form.password || undefined, full_name: form.full_name, role: form.role,
         class_ids: form.role === "guru" ? form.class_ids : undefined,
         homeroom_class_id: form.role === "wali_kelas" ? form.homeroom_class_id : undefined,
       },
     });
     setBusy(false);
-    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message);
-    toast.success("User dibuat"); setCreateOpen(false);
+    let errMsg: string | null = (data as any)?.error ?? null;
+    if (!errMsg && error) {
+      try { errMsg = (await (error as any).context?.json?.())?.error ?? error.message; }
+      catch { errMsg = error.message; }
+    }
+    if (errMsg) return toast.error(errMsg);
+    const generated = (data as any)?.password as string | undefined;
+    toast.success("Akun berhasil dibuat");
+    setCreateOpen(false);
     setForm({ email: "", password: "", full_name: "", role: "guru", class_ids: [], homeroom_class_id: "" });
+    if (generated) {
+      setResetFor({ id: (data as any).user_id, name: form.full_name, email: form.email });
+      setResetResult(generated); setResetOpen(true);
+    }
     load();
   };
 
@@ -229,7 +240,7 @@ const Users = () => {
           <form onSubmit={createUser} className="space-y-3">
             <div><Label>Nama Lengkap</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
             <div><Label>Email</Label><Input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div><Label>Password</Label><Input type="text" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+            <div><Label>Password <span className="text-xs text-muted-foreground">(opsional — otomatis bila kosong)</span></Label><Input type="text" minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Kosongkan untuk generate otomatis" /></div>
             <div>
               <Label>Peran</Label>
               <Select value={form.role} onValueChange={(v) => setForm({ ...form, role: v as Role, class_ids: [], homeroom_class_id: "" })}>

@@ -20,6 +20,7 @@ import StudentOrders from "./pages/StudentOrders";
 import StudentProfile from "./pages/StudentProfile";
 import CanteenOrders from "./pages/CanteenOrders";
 import AuditLogs from "./pages/AuditLogs";
+import Education from "./pages/Education";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/menu" element={<ProtectedRoute roles={["siswa"]}><StudentMenu /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute roles={["siswa"]}><StudentOrders /></ProtectedRoute>} />
               <Route path="/profil" element={<ProtectedRoute roles={["siswa"]}><StudentProfile /></ProtectedRoute>} />
+              <Route path="/edukasi" element={<Education />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
