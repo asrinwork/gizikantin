@@ -29,6 +29,10 @@ const Foods = () => {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Food | null>(null);
   const [form, setForm] = useState<any>(empty);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkResults, setBulkResults] = useState<{ ok: number; failed: { name: string; error: string }[] } | null>(null);
 
   const load = async () => {
     const { data } = await supabase.from("foods").select("*").order("name");
