@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { formatNum } from "@/lib/nutrition";
 import { logAudit } from "@/lib/audit";
 import { DataTable } from "@/components/DataTable";
+import { parseCSV } from "@/lib/csv";
 
 interface Food {
   id: string;
