@@ -18,6 +18,7 @@ import {
   UserCircle,
   Package,
   ScrollText,
+  BookOpen,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
