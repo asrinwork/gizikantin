@@ -20,10 +20,11 @@ interface Student {
   id: string; nis: string; full_name: string; class_name: string; class_id: string | null;
   gender: "L" | "P" | null; birth_date: string | null;
   height_cm: number | null; weight_kg: number | null; activity_level: ActivityLevel | null;
+  user_id?: string | null;
 }
 const empty: any = {
   nis: "", full_name: "", class_name: "", class_id: null, gender: "L", birth_date: "",
-  height_cm: "", weight_kg: "", activity_level: "light",
+  height_cm: "", weight_kg: "", activity_level: "light", email: "", password: "",
 };
 
 const Students = () => {
