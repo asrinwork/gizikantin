@@ -36,6 +36,13 @@ const Students = () => {
   const [form, setForm] = useState<any>(empty);
   const [barcodeStudent, setBarcodeStudent] = useState<Student | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createdInfo, setCreatedInfo] = useState<{ email: string; password: string; name: string } | null>(null);
+
+  // reset password
+  const [resetFor, setResetFor] = useState<Student | null>(null);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetResult, setResetResult] = useState<string | null>(null);
 
   const load = async () => {
     const [s, c] = await Promise.all([
