@@ -161,6 +161,9 @@ const Students = () => {
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="h-4 w-4 mr-2" /> Import CSV
           </Button>
+          <Button variant="outline" onClick={exportCSV} disabled={list.length === 0}>
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
           <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
             <FileDown className="h-4 w-4 mr-2" />{bulkBusy ? "Menyiapkan..." : "Unduh Semua QR"}
           </Button>
