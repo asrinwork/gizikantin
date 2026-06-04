@@ -187,12 +187,21 @@ const Foods = () => {
             <p className="text-sm text-muted-foreground">
               Kolom: <code>name,calories,protein,carbs,fat,sugar,price</code>
             </p>
-            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
-              <Download className="h-4 w-4 mr-2" />Unduh template
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+                <Download className="h-4 w-4 mr-2" />Unduh template
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />Pilih file CSV
+              </Button>
+              <input
+                ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
+            </div>
             <textarea
               className="w-full h-40 rounded-md border border-input bg-background p-2 font-mono text-xs"
-              placeholder="name,calories,protein,carbs,fat,sugar,price"
+              placeholder="Tempel isi CSV di sini atau klik 'Pilih file CSV'"
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
             />
