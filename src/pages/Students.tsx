@@ -192,6 +192,7 @@ const Students = () => {
                   <div className="whitespace-nowrap">
                     <Button size="icon" variant="ghost" title="Lihat QR" onClick={() => setBarcodeStudent(s)}><QrCode className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Unduh QR" onClick={() => downloadStudentBarcodePNG(s)}><Download className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title="Reset password" disabled={!s.user_id} onClick={() => { setResetFor(s); setResetResult(null); }}><KeyRound className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
