@@ -17,6 +17,8 @@ interface InRow {
   height_cm?: number | null;
   weight_kg?: number | null;
   activity_level?: string | null;
+  email?: string | null;
+  password?: string | null;
 }
 
 const EMAIL_DOMAIN = "sekolah.local";
