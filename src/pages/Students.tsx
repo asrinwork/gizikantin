@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, QrCode, Download, FileDown, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, QrCode, Download, FileDown, Upload, KeyRound, Copy, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { StudentBarcode } from "@/components/StudentBarcode";
 import { downloadStudentBarcodePNG, downloadBulkBarcodesPDF } from "@/lib/barcode-pdf";
 import { StudentImportDialog } from "@/components/StudentImportDialog";
 import { ACTIVITY_LABEL, type ActivityLevel } from "@/lib/calorie";
 import { DataTable } from "@/components/DataTable";
+import { DialogDescription } from "@/components/ui/dialog";
 
 interface ClassRow { id: string; name: string; }
 interface Student {
