@@ -59,6 +59,8 @@ const Education = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const bodyText = (form.body || "").replace(/<[^>]+>/g, "").trim();
+    if (!bodyText) return toast.error("Isi konten tidak boleh kosong");
     const payload = { ...form, summary: form.summary || null, cover_url: form.cover_url || null };
     if (editing) {
       const { error } = await supabase.from("education_content").update(payload).eq("id", editing.id);
