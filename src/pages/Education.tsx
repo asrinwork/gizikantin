@@ -173,7 +173,7 @@ const Education = () => {
                 <Input value={form.cover_url} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://..." />
               </div>
             </div>
-            <div><Label>Isi Konten</Label><Textarea required rows={10} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Tulis artikel di sini..." /></div>
+            <div><Label>Isi Konten</Label><RichTextEditor value={form.body} onChange={(html) => setForm({ ...form, body: html })} placeholder="Tulis artikel di sini... (gunakan toolbar untuk format teks)" /></div>
             <div className="flex items-center gap-2">
               <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
               <Label className="!mt-0">Publikasikan sekarang</Label>
