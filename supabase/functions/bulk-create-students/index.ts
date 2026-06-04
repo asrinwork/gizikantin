@@ -17,6 +17,8 @@ interface InRow {
   height_cm?: number | null;
   weight_kg?: number | null;
   activity_level?: string | null;
+  email?: string | null;
+  password?: string | null;
 }
 
 const EMAIL_DOMAIN = "sekolah.local";
@@ -75,8 +77,10 @@ Deno.serve(async (req) => {
         results.push({ nis: r.nis, ok: false, error: "NIS dan nama wajib" });
         continue;
       }
-      const email = `${String(r.nis).trim()}@${EMAIL_DOMAIN}`;
-      const password = String(r.nis).trim().padEnd(6, "0");
+      const email = (r.email && r.email.trim()) || `${String(r.nis).trim()}@${EMAIL_DOMAIN}`;
+      const password = (r.password && r.password.length >= 6)
+        ? r.password
+        : String(r.nis).trim().padEnd(6, "0");
 
       // Auto-create class if name given but not found
       let classId = r.class_id ?? null;

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, BookOpen, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
@@ -58,6 +59,8 @@ const Education = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const bodyText = (form.body || "").replace(/<[^>]+>/g, "").trim();
+    if (!bodyText) return toast.error("Isi konten tidak boleh kosong");
     const payload = { ...form, summary: form.summary || null, cover_url: form.cover_url || null };
     if (editing) {
       const { error } = await supabase.from("education_content").update(payload).eq("id", editing.id);
@@ -145,7 +148,9 @@ const Education = () => {
                 {active.summary && <p className="text-muted-foreground">{active.summary}</p>}
               </DialogHeader>
               {active.cover_url && <img src={active.cover_url} alt="" className="w-full rounded-md" />}
-              <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">{active.body}</div>
+              {/[<][a-z]/i.test(active.body)
+                ? <div className="prose prose-sm max-w-none text-foreground [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-3 [&_blockquote]:italic [&_img]:rounded [&_img]:my-2 [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded" dangerouslySetInnerHTML={{ __html: active.body }} />
+                : <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">{active.body}</div>}
             </>
           )}
         </DialogContent>
@@ -170,7 +175,7 @@ const Education = () => {
                 <Input value={form.cover_url} onChange={(e) => setForm({ ...form, cover_url: e.target.value })} placeholder="https://..." />
               </div>
             </div>
-            <div><Label>Isi Konten</Label><Textarea required rows={10} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} placeholder="Tulis artikel di sini..." /></div>
+            <div><Label>Isi Konten</Label><RichTextEditor value={form.body} onChange={(html) => setForm({ ...form, body: html })} placeholder="Tulis artikel di sini... (gunakan toolbar untuk format teks)" /></div>
             <div className="flex items-center gap-2">
               <Switch checked={form.published} onCheckedChange={(v) => setForm({ ...form, published: v })} />
               <Label className="!mt-0">Publikasikan sekarang</Label>

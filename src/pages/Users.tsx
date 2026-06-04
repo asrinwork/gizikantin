@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,10 @@ const Users = () => {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [bulkResults, setBulkResults] = useState<any[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const handleFile = async (f: File) => {
+    setBulkText(await f.text()); setBulkResults(null); toast.success(`${f.name} dimuat`);
+  };
 
   // teacher access dialog
   const [accessOpen, setAccessOpen] = useState(false);
@@ -296,8 +300,15 @@ const Users = () => {
             <DialogDescription>Kolom: <code>email,password,full_name,role,class_names</code>. Role: guru, wali_kelas, kepala_sekolah, kantin, admin. <code>class_names</code> dipisah koma.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
-            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>Unduh template</Button>
-            <textarea className="w-full h-40 rounded border p-2 font-mono text-xs" placeholder="email,password,full_name,role,class_names" value={bulkText} onChange={(e) => setBulkText(e.target.value)} />
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>Unduh template</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" /> Pilih file CSV
+              </Button>
+              <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            </div>
+            <textarea className="w-full h-40 rounded border p-2 font-mono text-xs" placeholder="Tempel CSV di sini atau klik 'Pilih file CSV'" value={bulkText} onChange={(e) => setBulkText(e.target.value)} />
             {bulkResults && (
               <div className="rounded border p-2 max-h-40 overflow-auto text-xs">
                 {bulkResults.map((r, i) => (

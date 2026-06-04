@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,14 @@ const Foods = () => {
   const [bulkText, setBulkText] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkResults, setBulkResults] = useState<{ ok: number; failed: { name: string; error: string }[] } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (f: File) => {
+    const text = await f.text();
+    setBulkText(text);
+    setBulkResults(null);
+    toast.success(`${f.name} dimuat`);
+  };
 
   const load = async () => {
     const { data } = await supabase.from("foods").select("*").order("name");
@@ -179,12 +187,21 @@ const Foods = () => {
             <p className="text-sm text-muted-foreground">
               Kolom: <code>name,calories,protein,carbs,fat,sugar,price</code>
             </p>
-            <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
-              <Download className="h-4 w-4 mr-2" />Unduh template
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
+                <Download className="h-4 w-4 mr-2" />Unduh template
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+                <Upload className="h-4 w-4 mr-2" />Pilih file CSV
+              </Button>
+              <input
+                ref={fileRef} type="file" accept=".csv,text/csv" className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
+            </div>
             <textarea
               className="w-full h-40 rounded-md border border-input bg-background p-2 font-mono text-xs"
-              placeholder="name,calories,protein,carbs,fat,sugar,price"
+              placeholder="Tempel isi CSV di sini atau klik 'Pilih file CSV'"
               value={bulkText}
               onChange={(e) => setBulkText(e.target.value)}
             />
