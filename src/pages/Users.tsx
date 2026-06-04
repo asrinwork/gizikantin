@@ -33,6 +33,10 @@ const Users = () => {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [bulkResults, setBulkResults] = useState<any[] | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const handleFile = async (f: File) => {
+    setBulkText(await f.text()); setBulkResults(null); toast.success(`${f.name} dimuat`);
+  };
 
   // teacher access dialog
   const [accessOpen, setAccessOpen] = useState(false);
