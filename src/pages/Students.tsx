@@ -241,11 +241,85 @@ const Students = () => {
                 </SelectContent>
               </Select>
             </div>
+            {!editing && (
+              <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                <p className="text-xs font-medium text-muted-foreground">Akun login (otomatis dibuat)</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Email <span className="text-xs text-muted-foreground">(opsional)</span></Label>
+                    <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="default: NIS@sekolah.local" />
+                  </div>
+                  <div>
+                    <Label>Password <span className="text-xs text-muted-foreground">(opsional, min 6)</span></Label>
+                    <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="default: NIS" />
+                  </div>
+                </div>
+              </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan</Button>
+              <Button type="submit" disabled={createBusy}>{createBusy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Simpan</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credentials shown after create */}
+      <Dialog open={!!createdInfo} onOpenChange={(o) => !o && setCreatedInfo(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Akun siswa berhasil dibuat</DialogTitle>
+            <DialogDescription>Catat email & password berikut — password tidak akan ditampilkan lagi.</DialogDescription>
+          </DialogHeader>
+          {createdInfo && (
+            <div className="space-y-3">
+              <div><Label>Nama</Label><Input readOnly value={createdInfo.name} /></div>
+              <div><Label>Email</Label>
+                <div className="flex gap-2"><Input readOnly value={createdInfo.email} className="font-mono" />
+                  <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(createdInfo.email); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              <div><Label>Password</Label>
+                <div className="flex gap-2"><Input readOnly value={createdInfo.password} className="font-mono" />
+                  <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(createdInfo.password); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter><Button onClick={() => setCreatedInfo(null)}>Selesai</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset password dialog */}
+      <Dialog open={!!resetFor} onOpenChange={(o) => { if (!o) { setResetFor(null); setResetResult(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password Siswa</DialogTitle>
+            <DialogDescription>
+              {resetFor && <>Akun: <b>{resetFor.full_name}</b> ({resetFor.nis})</>}
+            </DialogDescription>
+          </DialogHeader>
+          {!resetResult ? (
+            <p className="text-sm text-muted-foreground">Password lama tidak dapat dilihat. Setelah direset, password baru akan ditampilkan satu kali.</p>
+          ) : (
+            <div className="space-y-2">
+              <Label>Password baru (catat sekarang)</Label>
+              <div className="flex gap-2">
+                <Input readOnly value={resetResult} className="font-mono" />
+                <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(resetResult); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            {!resetResult ? (
+              <>
+                <Button variant="outline" onClick={() => setResetFor(null)}>Batal</Button>
+                <Button onClick={runReset} disabled={resetBusy}>{resetBusy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Reset</Button>
+              </>
+            ) : (
+              <Button onClick={() => { setResetFor(null); setResetResult(null); }}>Selesai</Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
