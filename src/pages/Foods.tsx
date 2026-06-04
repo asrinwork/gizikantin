@@ -33,6 +33,14 @@ const Foods = () => {
   const [bulkText, setBulkText] = useState("");
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkResults, setBulkResults] = useState<{ ok: number; failed: { name: string; error: string }[] } | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (f: File) => {
+    const text = await f.text();
+    setBulkText(text);
+    setBulkResults(null);
+    toast.success(`${f.name} dimuat`);
+  };
 
   const load = async () => {
     const { data } = await supabase.from("foods").select("*").order("name");
