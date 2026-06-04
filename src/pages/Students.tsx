@@ -70,25 +70,43 @@ const Students = () => {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const cls = classes.find((c) => c.id === form.class_id);
-    const payload: any = {
-      nis: form.nis, full_name: form.full_name,
-      class_name: cls?.name ?? form.class_name,
-      class_id: form.class_id || null,
-      gender: form.gender, birth_date: form.birth_date || null,
-      height_cm: form.height_cm ? +form.height_cm : null,
-      weight_kg: form.weight_kg ? +form.weight_kg : null,
-      activity_level: form.activity_level,
-    };
     if (editing) {
+      const payload: any = {
+        nis: form.nis, full_name: form.full_name,
+        class_name: cls?.name ?? form.class_name,
+        class_id: form.class_id || null,
+        gender: form.gender, birth_date: form.birth_date || null,
+        height_cm: form.height_cm ? +form.height_cm : null,
+        weight_kg: form.weight_kg ? +form.weight_kg : null,
+        activity_level: form.activity_level,
+      };
       const { error } = await supabase.from("students").update(payload).eq("id", editing.id);
       if (error) return toast.error(error.message);
       toast.success("Siswa diperbarui");
+      setOpen(false); load();
     } else {
-      const { error } = await supabase.from("students").insert(payload);
-      if (error) return toast.error(error.message);
-      toast.success("Siswa ditambahkan. Gunakan Import CSV untuk membuat akun login.");
+      // Manual create — also create login account via edge function
+      setCreateBusy(true);
+      const row = {
+        nis: form.nis, full_name: form.full_name,
+        class_name: cls?.name ?? form.class_name,
+        class_id: form.class_id || null,
+        gender: form.gender, birth_date: form.birth_date || null,
+        height_cm: form.height_cm ? +form.height_cm : null,
+        weight_kg: form.weight_kg ? +form.weight_kg : null,
+        activity_level: form.activity_level,
+        email: form.email || undefined,
+        password: form.password || undefined,
+      };
+      const { data, error } = await supabase.functions.invoke("bulk-create-students", { body: { students: [row] } });
+      setCreateBusy(false);
+      if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message);
+      const res = (data as any).results?.[0];
+      if (!res?.ok) return toast.error(res?.error || "Gagal membuat akun");
+      setOpen(false);
+      setCreatedInfo({ name: form.full_name, email: res.email, password: res.password });
+      load();
     }
-    setOpen(false); load();
   };
 
   const remove = async (id: string) => {
@@ -96,6 +114,32 @@ const Students = () => {
     const { error } = await supabase.from("students").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Dihapus"); load();
+  };
+
+  const runReset = async () => {
+    if (!resetFor?.user_id) return toast.error("Siswa ini belum punya akun login");
+    setResetBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-reset-password", { body: { user_id: resetFor.user_id } });
+    setResetBusy(false);
+    if (error || (data as any)?.error) return toast.error((data as any)?.error ?? error?.message);
+    setResetResult((data as any).password);
+    toast.success("Password berhasil direset");
+  };
+
+  const exportCSV = () => {
+    if (!list.length) return toast.error("Belum ada data");
+    const headers = ["nis","nama","kelas","gender","tgl_lahir","tinggi_cm","berat_kg","aktivitas"];
+    const esc = (v: any) => {
+      const s = v == null ? "" : String(v);
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [headers.join(",")].concat(
+      list.map((s) => [s.nis, s.full_name, s.class_name, s.gender ?? "", s.birth_date ?? "", s.height_cm ?? "", s.weight_kg ?? "", s.activity_level ?? ""].map(esc).join(","))
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `siswa-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    toast.success(`${list.length} siswa diekspor`);
   };
 
   const handleBulkDownload = async () => {
