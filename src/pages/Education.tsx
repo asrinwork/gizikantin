@@ -146,7 +146,9 @@ const Education = () => {
                 {active.summary && <p className="text-muted-foreground">{active.summary}</p>}
               </DialogHeader>
               {active.cover_url && <img src={active.cover_url} alt="" className="w-full rounded-md" />}
-              <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">{active.body}</div>
+              {/[<][a-z]/i.test(active.body)
+                ? <div className="prose prose-sm max-w-none text-foreground [&_h1]:text-2xl [&_h1]:font-bold [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:text-lg [&_h3]:font-semibold [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:list-decimal [&_ol]:pl-6 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-primary [&_blockquote]:pl-3 [&_blockquote]:italic [&_img]:rounded [&_img]:my-2 [&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded" dangerouslySetInnerHTML={{ __html: active.body }} />
+                : <div className="prose prose-sm max-w-none whitespace-pre-wrap text-foreground">{active.body}</div>}
             </>
           )}
         </DialogContent>
