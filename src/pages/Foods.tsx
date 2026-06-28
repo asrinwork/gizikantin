@@ -35,6 +35,8 @@ const Foods = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkResults, setBulkResults] = useState<{ ok: number; failed: { name: string; error: string }[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const [imgBusy, setImgBusy] = useState(false);
 
   const handleFile = async (f: File) => {
     const text = await f.text();
