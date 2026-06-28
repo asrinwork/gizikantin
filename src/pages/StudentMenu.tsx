@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { calcDailyTarget } from "@/lib/calorie";
 import { recommend } from "@/lib/recommend";
-import { formatNum } from "@/lib/nutrition";
+import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
 import { Search, Plus, Minus, X, Sparkles, AlertTriangle, ShoppingCart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
