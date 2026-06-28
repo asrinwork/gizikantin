@@ -211,6 +211,21 @@ const Students = () => {
               { key: "class_name", header: "Kelas", accessor: (s) => s.class_name, cell: (s) => s.class_name },
               { key: "gender", header: "JK", accessor: (s) => s.gender ?? "", cell: (s) => (s.gender === "P" ? "P" : "L") },
               { key: "tbbb", header: "TB/BB", accessor: (s) => s.height_cm ?? 0, cell: (s) => <span className="text-xs">{s.height_cm ?? "-"}/{s.weight_kg ?? "-"}</span> },
+              {
+                key: "imt", header: "Status IMT",
+                accessor: (s) => computeBMI(s.weight_kg, s.height_cm) ?? -1,
+                cell: (s) => {
+                  const bmi = computeBMI(s.weight_kg, s.height_cm);
+                  const cat = bmiCategory(bmi);
+                  if (!cat) return <span className="text-xs text-muted-foreground">—</span>;
+                  return (
+                    <div className="flex flex-col gap-0.5">
+                      <Badge className={bmiBadgeClass(cat) + " w-fit"}>{cat}</Badge>
+                      <span className="text-[10px] text-muted-foreground">IMT {formatNum(bmi!, 1)}</span>
+                    </div>
+                  );
+                },
+              },
               { key: "akun", header: "Akun", accessor: (s) => ((s as any).user_id ? "1" : "0"), cell: (s) => (s as any).user_id ? <span className="text-success text-xs">✓</span> : <span className="text-muted-foreground text-xs">—</span> },
               {
                 key: "act", header: "", sortable: false, align: "right",
@@ -218,6 +233,7 @@ const Students = () => {
                   <div className="whitespace-nowrap">
                     <Button size="icon" variant="ghost" title="Lihat QR" onClick={() => setBarcodeStudent(s)}><QrCode className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Unduh QR" onClick={() => downloadStudentBarcodePNG(s)}><Download className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title="Lihat email & password" disabled={!s.user_id || !creds[s.user_id!]} onClick={() => setCredsFor(s)}><Eye className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Reset password" disabled={!s.user_id} onClick={() => { setResetFor(s); setResetResult(null); }}><KeyRound className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
