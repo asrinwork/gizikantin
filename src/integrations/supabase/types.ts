@@ -231,6 +231,7 @@ export type Database = {
           created_by: string | null
           fat: number
           id: string
+          image_url: string | null
           name: string
           price: number
           protein: number
@@ -243,6 +244,7 @@ export type Database = {
           created_by?: string | null
           fat?: number
           id?: string
+          image_url?: string | null
           name: string
           price?: number
           protein?: number
@@ -255,6 +257,7 @@ export type Database = {
           created_by?: string | null
           fat?: number
           id?: string
+          image_url?: string | null
           name?: string
           price?: number
           protein?: number
@@ -402,6 +405,27 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+        }
+        Relationships: []
+      }
+      student_credentials: {
+        Row: {
+          email: string
+          password: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email: string
+          password: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email?: string
+          password?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
