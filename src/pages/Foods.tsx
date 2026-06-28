@@ -194,8 +194,39 @@ const Foods = () => {
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Kalori (kkal)</Label><Input type="number" step="0.1" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} /></div>
               <div><Label>Protein (g)</Label><Input type="number" step="0.1" value={form.protein} onChange={(e) => setForm({ ...form, protein: e.target.value })} /></div>
-              <div><Label>Karbohidrat (g)</Label><Input type="number" step="0.1" value={form.carbs} onChange={(e) => setForm({ ...form, carbs: e.target.value })} /></div>
-              <div><Label>Lemak (g)</Label><Input type="number" step="0.1" value={form.fat} onChange={(e) => setForm({ ...form, fat: e.target.value })} /></div>
+          <form onSubmit={submit} className="space-y-3">
+            <div>
+              <Label>Gambar Makanan</Label>
+              <div className="mt-1 flex items-center gap-3">
+                {form.image_url ? (
+                  <div className="relative">
+                    <img src={form.image_url} alt="" className="h-20 w-20 rounded-md object-cover border" />
+                    <button type="button" onClick={() => setForm({ ...form, image_url: "" })}
+                      className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-20 w-20 rounded-md border-2 border-dashed flex items-center justify-center bg-muted/30">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 space-y-2">
+                  <Button type="button" variant="outline" size="sm" disabled={imgBusy} onClick={() => imgRef.current?.click()}>
+                    {imgBusy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                    {form.image_url ? "Ganti gambar" : "Upload gambar"}
+                  </Button>
+                  <input ref={imgRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0])} />
+                  <Input placeholder="atau tempel URL gambar"
+                    value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+                </div>
+              </div>
+            </div>
+            <div><Label>Nama</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Kalori (kkal)</Label><Input type="number" step="0.1" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} /></div>
+              <div><Label>Protein (g)</Label><Input type="number" step="0.1" value={form.protein} onChange={(e) => setForm({ ...form, protein: e.target.value })} /></div>
               <div><Label>Gula (g)</Label><Input type="number" step="0.1" value={form.sugar} onChange={(e) => setForm({ ...form, sugar: e.target.value })} /></div>
               <div><Label>Harga (Rp)</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
             </div>
