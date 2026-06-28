@@ -135,19 +135,27 @@ const Students = () => {
     toast.success("Password berhasil direset");
   };
 
-  const exportCSV = () => {
+  const exportCSV = (includeCreds = false) => {
     if (!list.length) return toast.error("Belum ada data");
-    const headers = ["nis","nama","kelas","gender","tgl_lahir","tinggi_cm","berat_kg","aktivitas"];
+    const headers = ["nis","nama","kelas","gender","tgl_lahir","tinggi_cm","berat_kg","imt","status_imt","aktivitas"];
+    if (includeCreds) headers.push("email","password");
     const esc = (v: any) => {
       const s = v == null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const lines = [headers.join(",")].concat(
-      list.map((s) => [s.nis, s.full_name, s.class_name, s.gender ?? "", s.birth_date ?? "", s.height_cm ?? "", s.weight_kg ?? "", s.activity_level ?? ""].map(esc).join(","))
+      list.map((s) => {
+        const bmi = computeBMI(s.weight_kg, s.height_cm);
+        const cat = bmiCategory(bmi);
+        const cred = s.user_id ? creds[s.user_id] : null;
+        const row: any[] = [s.nis, s.full_name, s.class_name, s.gender ?? "", s.birth_date ?? "", s.height_cm ?? "", s.weight_kg ?? "", bmi != null ? bmi.toFixed(1) : "", cat ?? "", s.activity_level ?? ""];
+        if (includeCreds) row.push(cred?.email ?? "", cred?.password ?? "");
+        return row.map(esc).join(",");
+      })
     );
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `siswa-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    a.download = `siswa${includeCreds ? "-lengkap" : ""}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
     toast.success(`${list.length} siswa diekspor`);
   };
 
