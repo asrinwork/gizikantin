@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Upload, Download } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, Download, ImageIcon, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatNum } from "@/lib/nutrition";
 import { logAudit } from "@/lib/audit";
@@ -19,9 +19,10 @@ interface Food {
   id: string;
   name: string;
   calories: number; protein: number; carbs: number; fat: number; sugar: number; price: number;
+  image_url?: string | null;
 }
 
-const empty = { name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0 };
+const empty = { name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0, image_url: "" };
 
 const Foods = () => {
   const { user } = useAuth();
@@ -34,6 +35,8 @@ const Foods = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [bulkResults, setBulkResults] = useState<{ ok: number; failed: { name: string; error: string }[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const [imgBusy, setImgBusy] = useState(false);
 
   const handleFile = async (f: File) => {
     const text = await f.text();
@@ -56,6 +59,7 @@ const Foods = () => {
     const payload = {
       name: form.name,
       calories: +form.calories, protein: +form.protein, carbs: +form.carbs, fat: +form.fat, sugar: +form.sugar, price: +form.price,
+      image_url: form.image_url || null,
     };
     if (editing) {
       const { error } = await supabase.from("foods").update(payload).eq("id", editing.id);
@@ -70,6 +74,23 @@ const Foods = () => {
     }
     setOpen(false);
     load();
+  };
+
+  const uploadImage = async (file: File) => {
+    setImgBusy(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user?.id ?? "anon"}/${Date.now()}.${ext}`;
+      const { error: ue } = await supabase.storage.from("food-images").upload(path, file, { upsert: true, contentType: file.type });
+      if (ue) throw ue;
+      // Signed URL (1 year) since bucket is private
+      const { data: signed, error: se } = await supabase.storage.from("food-images").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (se) throw se;
+      setForm((f: any) => ({ ...f, image_url: signed.signedUrl }));
+      toast.success("Gambar diupload");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal upload");
+    } finally { setImgBusy(false); }
   };
 
   const remove = async (id: string) => {
@@ -138,6 +159,12 @@ const Foods = () => {
             searchPlaceholder="Cari makanan..."
             emptyMessage="Belum ada makanan."
             columns={[
+              {
+                key: "img", header: "", sortable: false,
+                cell: (f) => f.image_url
+                  ? <img src={f.image_url} alt={f.name} className="h-10 w-10 rounded object-cover border" />
+                  : <div className="h-10 w-10 rounded border flex items-center justify-center bg-muted"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>,
+              },
               { key: "name", header: "Nama", accessor: (f) => f.name, cell: (f) => <span className="font-medium">{f.name}</span> },
               { key: "calories", header: "Kal", accessor: (f) => f.calories, cell: (f) => formatNum(f.calories, 0) },
               { key: "protein", header: "Prot", accessor: (f) => f.protein, cell: (f) => formatNum(f.protein) },
@@ -163,6 +190,34 @@ const Foods = () => {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing ? "Edit" : "Tambah"} Makanan</DialogTitle></DialogHeader>
           <form onSubmit={submit} className="space-y-3">
+            <div>
+              <Label>Gambar Makanan</Label>
+              <div className="mt-1 flex items-center gap-3">
+                {form.image_url ? (
+                  <div className="relative">
+                    <img src={form.image_url} alt="" className="h-20 w-20 rounded-md object-cover border" />
+                    <button type="button" onClick={() => setForm({ ...form, image_url: "" })}
+                      className="absolute -top-1.5 -right-1.5 rounded-full bg-destructive text-destructive-foreground p-0.5">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="h-20 w-20 rounded-md border-2 border-dashed flex items-center justify-center bg-muted/30">
+                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="flex-1 space-y-2">
+                  <Button type="button" variant="outline" size="sm" disabled={imgBusy} onClick={() => imgRef.current?.click()}>
+                    {imgBusy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                    {form.image_url ? "Ganti gambar" : "Upload gambar"}
+                  </Button>
+                  <input ref={imgRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => e.target.files?.[0] && uploadImage(e.target.files[0])} />
+                  <Input placeholder="atau tempel URL gambar"
+                    value={form.image_url ?? ""} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
+                </div>
+              </div>
+            </div>
             <div><Label>Nama</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Kalori (kkal)</Label><Input type="number" step="0.1" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} /></div>

@@ -38,3 +38,32 @@ export const statusEmoji = (s: NutritionStatus) =>
 
 export const formatNum = (n: number, digits = 1) =>
   Number(n ?? 0).toLocaleString("id-ID", { maximumFractionDigits: digits });
+
+// ===== Indeks Massa Tubuh (IMT / BMI) =====
+export type BmiCategory = "Sangat Kurus" | "Kurus" | "Normal" | "Gemuk" | "Obesitas";
+
+export const computeBMI = (weightKg?: number | null, heightCm?: number | null): number | null => {
+  if (!weightKg || !heightCm || heightCm <= 0) return null;
+  const m = heightCm / 100;
+  return weightKg / (m * m);
+};
+
+export const bmiCategory = (bmi: number | null | undefined): BmiCategory | null => {
+  if (bmi == null || !isFinite(bmi)) return null;
+  if (bmi < 17) return "Sangat Kurus";
+  if (bmi < 18.5) return "Kurus";
+  if (bmi < 25) return "Normal";
+  if (bmi < 27) return "Gemuk";
+  return "Obesitas";
+};
+
+export const bmiBadgeClass = (cat: BmiCategory | null): string => {
+  switch (cat) {
+    case "Normal": return "bg-success text-success-foreground";
+    case "Kurus":
+    case "Gemuk": return "bg-warning text-warning-foreground";
+    case "Sangat Kurus":
+    case "Obesitas": return "bg-destructive text-destructive-foreground";
+    default: return "bg-muted text-muted-foreground";
+  }
+};

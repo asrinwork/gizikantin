@@ -138,6 +138,12 @@ Deno.serve(async (req) => {
         results.push({ nis: r.nis, ok: false, error: se.message });
         continue;
       }
+      // Track credentials for admin retrieval/export
+      await admin.from("student_credentials").upsert(
+        { user_id: userId, email, password, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+
       results.push({ nis: r.nis, ok: true, email, password });
     }
 

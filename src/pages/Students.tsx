@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, QrCode, Download, FileDown, Upload, KeyRound, Copy, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, QrCode, Download, FileDown, Upload, KeyRound, Copy, Loader2, Eye, EyeOff } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { StudentBarcode } from "@/components/StudentBarcode";
 import { downloadStudentBarcodePNG, downloadBulkBarcodesPDF } from "@/lib/barcode-pdf";
@@ -14,6 +15,8 @@ import { StudentImportDialog } from "@/components/StudentImportDialog";
 import { ACTIVITY_LABEL, type ActivityLevel } from "@/lib/calorie";
 import { DataTable } from "@/components/DataTable";
 import { DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { computeBMI, bmiCategory, bmiBadgeClass, formatNum } from "@/lib/nutrition";
 
 interface ClassRow { id: string; name: string; }
 interface Student {
@@ -30,6 +33,7 @@ const empty: any = {
 const Students = () => {
   const [list, setList] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassRow[]>([]);
+  const [creds, setCreds] = useState<Record<string, { email: string; password: string }>>({});
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
@@ -38,6 +42,8 @@ const Students = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{ email: string; password: string; name: string } | null>(null);
+  const [credsFor, setCredsFor] = useState<Student | null>(null);
+  const [showPwAll, setShowPwAll] = useState(false);
 
   // reset password
   const [resetFor, setResetFor] = useState<Student | null>(null);
@@ -45,12 +51,16 @@ const Students = () => {
   const [resetResult, setResetResult] = useState<string | null>(null);
 
   const load = async () => {
-    const [s, c] = await Promise.all([
+    const [s, c, cr] = await Promise.all([
       supabase.from("students").select("*").order("class_name").order("full_name"),
       supabase.from("classes").select("id,name").order("name"),
+      supabase.from("student_credentials").select("user_id,email,password"),
     ]);
     setList((s.data ?? []) as any);
     setClasses((c.data ?? []) as any);
+    const map: Record<string, { email: string; password: string }> = {};
+    (cr.data ?? []).forEach((r: any) => { map[r.user_id] = { email: r.email, password: r.password }; });
+    setCreds(map);
   };
   useEffect(() => { load(); }, []);
 
@@ -126,19 +136,27 @@ const Students = () => {
     toast.success("Password berhasil direset");
   };
 
-  const exportCSV = () => {
+  const exportCSV = (includeCreds = false) => {
     if (!list.length) return toast.error("Belum ada data");
-    const headers = ["nis","nama","kelas","gender","tgl_lahir","tinggi_cm","berat_kg","aktivitas"];
+    const headers = ["nis","nama","kelas","gender","tgl_lahir","tinggi_cm","berat_kg","imt","status_imt","aktivitas"];
+    if (includeCreds) headers.push("email","password");
     const esc = (v: any) => {
       const s = v == null ? "" : String(v);
       return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const lines = [headers.join(",")].concat(
-      list.map((s) => [s.nis, s.full_name, s.class_name, s.gender ?? "", s.birth_date ?? "", s.height_cm ?? "", s.weight_kg ?? "", s.activity_level ?? ""].map(esc).join(","))
+      list.map((s) => {
+        const bmi = computeBMI(s.weight_kg, s.height_cm);
+        const cat = bmiCategory(bmi);
+        const cred = s.user_id ? creds[s.user_id] : null;
+        const row: any[] = [s.nis, s.full_name, s.class_name, s.gender ?? "", s.birth_date ?? "", s.height_cm ?? "", s.weight_kg ?? "", bmi != null ? bmi.toFixed(1) : "", cat ?? "", s.activity_level ?? ""];
+        if (includeCreds) row.push(cred?.email ?? "", cred?.password ?? "");
+        return row.map(esc).join(",");
+      })
     );
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-    a.download = `siswa-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    a.download = `siswa${includeCreds ? "-lengkap" : ""}-${new Date().toISOString().slice(0,10)}.csv`; a.click();
     toast.success(`${list.length} siswa diekspor`);
   };
 
@@ -161,9 +179,17 @@ const Students = () => {
           <Button variant="outline" onClick={() => setImportOpen(true)}>
             <Upload className="h-4 w-4 mr-2" /> Import CSV
           </Button>
-          <Button variant="outline" onClick={exportCSV} disabled={list.length === 0}>
-            <Download className="h-4 w-4 mr-2" /> Export CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" disabled={list.length === 0}>
+                <Download className="h-4 w-4 mr-2" /> Export CSV
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => exportCSV(false)}>Tanpa email & password</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportCSV(true)}>Lengkap (termasuk email & password)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button variant="outline" onClick={handleBulkDownload} disabled={bulkBusy || list.length === 0}>
             <FileDown className="h-4 w-4 mr-2" />{bulkBusy ? "Menyiapkan..." : "Unduh Semua QR"}
           </Button>
@@ -185,6 +211,21 @@ const Students = () => {
               { key: "class_name", header: "Kelas", accessor: (s) => s.class_name, cell: (s) => s.class_name },
               { key: "gender", header: "JK", accessor: (s) => s.gender ?? "", cell: (s) => (s.gender === "P" ? "P" : "L") },
               { key: "tbbb", header: "TB/BB", accessor: (s) => s.height_cm ?? 0, cell: (s) => <span className="text-xs">{s.height_cm ?? "-"}/{s.weight_kg ?? "-"}</span> },
+              {
+                key: "imt", header: "Status IMT",
+                accessor: (s) => computeBMI(s.weight_kg, s.height_cm) ?? -1,
+                cell: (s) => {
+                  const bmi = computeBMI(s.weight_kg, s.height_cm);
+                  const cat = bmiCategory(bmi);
+                  if (!cat) return <span className="text-xs text-muted-foreground">—</span>;
+                  return (
+                    <div className="flex flex-col gap-0.5">
+                      <Badge className={bmiBadgeClass(cat) + " w-fit"}>{cat}</Badge>
+                      <span className="text-[10px] text-muted-foreground">IMT {formatNum(bmi!, 1)}</span>
+                    </div>
+                  );
+                },
+              },
               { key: "akun", header: "Akun", accessor: (s) => ((s as any).user_id ? "1" : "0"), cell: (s) => (s as any).user_id ? <span className="text-success text-xs">✓</span> : <span className="text-muted-foreground text-xs">—</span> },
               {
                 key: "act", header: "", sortable: false, align: "right",
@@ -192,6 +233,7 @@ const Students = () => {
                   <div className="whitespace-nowrap">
                     <Button size="icon" variant="ghost" title="Lihat QR" onClick={() => setBarcodeStudent(s)}><QrCode className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Unduh QR" onClick={() => downloadStudentBarcodePNG(s)}><Download className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="ghost" title="Lihat email & password" disabled={!s.user_id || !creds[s.user_id!]} onClick={() => setCredsFor(s)}><Eye className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" title="Reset password" disabled={!s.user_id} onClick={() => { setResetFor(s); setResetResult(null); }}><KeyRound className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => startEdit(s)}><Pencil className="h-4 w-4" /></Button>
                     <Button size="icon" variant="ghost" onClick={() => remove(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -336,6 +378,38 @@ const Students = () => {
               <Button className="w-full" onClick={() => downloadStudentBarcodePNG(barcodeStudent)}><Download className="h-4 w-4 mr-2" /> Unduh PNG</Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View credentials */}
+      <Dialog open={!!credsFor} onOpenChange={(o) => { if (!o) { setCredsFor(null); setShowPwAll(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Akun Login Siswa</DialogTitle>
+            <DialogDescription>
+              {credsFor && <>Akun: <b>{credsFor.full_name}</b> ({credsFor.nis})</>}
+            </DialogDescription>
+          </DialogHeader>
+          {credsFor && credsFor.user_id && creds[credsFor.user_id] ? (
+            <div className="space-y-3">
+              <div><Label>Email</Label>
+                <div className="flex gap-2"><Input readOnly value={creds[credsFor.user_id].email} className="font-mono" />
+                  <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(creds[credsFor.user_id!].email); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              <div><Label>Password</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={creds[credsFor.user_id].password} className="font-mono" type={showPwAll ? "text" : "password"} />
+                  <Button type="button" variant="outline" onClick={() => setShowPwAll((v) => !v)}>{showPwAll ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+                  <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(creds[credsFor.user_id!].password); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Password disimpan dari proses pembuatan/reset akun. Jika siswa mengubah password sendiri, nilai di sini tidak akan ikut berubah.</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Password tidak tersedia. Lakukan reset password untuk menghasilkan dan menyimpan password baru.</p>
+          )}
+          <DialogFooter><Button onClick={() => setCredsFor(null)}>Tutup</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

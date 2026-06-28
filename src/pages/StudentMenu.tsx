@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { calcDailyTarget } from "@/lib/calorie";
 import { recommend } from "@/lib/recommend";
-import { formatNum } from "@/lib/nutrition";
+import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
 import { Search, Plus, Minus, X, Sparkles, AlertTriangle, ShoppingCart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -101,11 +101,22 @@ const StudentMenu = () => {
 
   if (!student) return <Card><CardContent className="p-8 text-center text-muted-foreground">Profil siswa tidak ditemukan.</CardContent></Card>;
 
+  const bmi = computeBMI(student?.weight_kg, student?.height_cm);
+  const bmiCat = bmiCategory(bmi);
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Pesan Makanan</h1>
-        <p className="text-sm text-muted-foreground">Sisa kebutuhan kalori hari ini: <strong>{formatNum(remaining, 0)} kkal</strong></p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Pesan Makanan</h1>
+          <p className="text-sm text-muted-foreground">Sisa kebutuhan kalori hari ini: <strong>{formatNum(remaining, 0)} kkal</strong></p>
+        </div>
+        {bmiCat && (
+          <div className="text-right">
+            <Badge className={bmiBadgeClass(bmiCat)}>Status: {bmiCat}</Badge>
+            <p className="text-[10px] text-muted-foreground mt-0.5">IMT {formatNum(bmi!, 1)} kg/m²</p>
+          </div>
+        )}
       </div>
 
       <Card className="shadow-soft">
@@ -147,12 +158,19 @@ const StudentMenu = () => {
                   const overshoot = consumed + totals.cal + +f.calories > target.calories;
                   return (
                     <button key={f.id} type="button" onClick={() => !overshoot && add(f.id)} disabled={overshoot && !inCart}
-                      className={`relative text-left rounded-lg border p-3 transition ${overshoot && !inCart ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:shadow-md"}`}>
-                      {inCart && <span className="absolute top-1.5 right-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-1.5">{inCart}</span>}
-                      <p className="font-medium text-sm line-clamp-2">{f.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{formatNum(f.calories, 0)} kkal</p>
-                      <p className="text-sm font-semibold text-primary mt-1">{rupiah(f.price)}</p>
-                      {overshoot && !inCart && <Badge variant="destructive" className="mt-2 text-[10px]">Melebihi kalori</Badge>}
+                      className={`relative text-left rounded-lg border overflow-hidden transition ${overshoot && !inCart ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:shadow-md"}`}>
+                      {inCart && <span className="absolute top-1.5 right-1.5 z-10 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-1.5">{inCart}</span>}
+                      {f.image_url ? (
+                        <img src={f.image_url} alt={f.name} className="h-28 w-full object-cover" />
+                      ) : (
+                        <div className="h-28 w-full bg-muted" />
+                      )}
+                      <div className="p-3">
+                        <p className="font-medium text-sm line-clamp-2">{f.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{formatNum(f.calories, 0)} kkal</p>
+                        <p className="text-sm font-semibold text-primary mt-1">{rupiah(f.price)}</p>
+                        {overshoot && !inCart && <Badge variant="destructive" className="mt-2 text-[10px]">Melebihi kalori</Badge>}
+                      </div>
                     </button>
                   );
                 })}
