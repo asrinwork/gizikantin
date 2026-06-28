@@ -19,9 +19,10 @@ interface Food {
   id: string;
   name: string;
   calories: number; protein: number; carbs: number; fat: number; sugar: number; price: number;
+  image_url?: string | null;
 }
 
-const empty = { name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0 };
+const empty = { name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0, image_url: "" };
 
 const Foods = () => {
   const { user } = useAuth();
