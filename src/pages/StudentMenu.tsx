@@ -158,12 +158,19 @@ const StudentMenu = () => {
                   const overshoot = consumed + totals.cal + +f.calories > target.calories;
                   return (
                     <button key={f.id} type="button" onClick={() => !overshoot && add(f.id)} disabled={overshoot && !inCart}
-                      className={`relative text-left rounded-lg border p-3 transition ${overshoot && !inCart ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:shadow-md"}`}>
-                      {inCart && <span className="absolute top-1.5 right-1.5 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-1.5">{inCart}</span>}
-                      <p className="font-medium text-sm line-clamp-2">{f.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{formatNum(f.calories, 0)} kkal</p>
-                      <p className="text-sm font-semibold text-primary mt-1">{rupiah(f.price)}</p>
-                      {overshoot && !inCart && <Badge variant="destructive" className="mt-2 text-[10px]">Melebihi kalori</Badge>}
+                      className={`relative text-left rounded-lg border overflow-hidden transition ${overshoot && !inCart ? "opacity-50 cursor-not-allowed" : "hover:border-primary hover:shadow-md"}`}>
+                      {inCart && <span className="absolute top-1.5 right-1.5 z-10 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs px-1.5">{inCart}</span>}
+                      {f.image_url ? (
+                        <img src={f.image_url} alt={f.name} className="h-28 w-full object-cover" />
+                      ) : (
+                        <div className="h-28 w-full bg-muted" />
+                      )}
+                      <div className="p-3">
+                        <p className="font-medium text-sm line-clamp-2">{f.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{formatNum(f.calories, 0)} kkal</p>
+                        <p className="text-sm font-semibold text-primary mt-1">{rupiah(f.price)}</p>
+                        {overshoot && !inCart && <Badge variant="destructive" className="mt-2 text-[10px]">Melebihi kalori</Badge>}
+                      </div>
                     </button>
                   );
                 })}
