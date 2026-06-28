@@ -39,6 +39,19 @@ Deno.serve(async (req) => {
     const { error } = await admin.auth.admin.updateUserById(user_id, { password: newPwd });
     if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    // Update stored credential snapshot if this user is a student
+    const { data: stu } = await admin.from("students").select("user_id").eq("user_id", user_id).maybeSingle();
+    if (stu) {
+      const { data: au } = await admin.auth.admin.getUserById(user_id);
+      const email = au?.user?.email ?? "";
+      if (email) {
+        await admin.from("student_credentials").upsert(
+          { user_id, email, password: newPwd, updated_at: new Date().toISOString() },
+          { onConflict: "user_id" },
+        );
+      }
+    }
+
     await admin.from("audit_logs").insert({
       actor_id: user.id, actor_email: user.email,
       action: "reset_password", entity: "user", entity_id: user_id, detail: {},
