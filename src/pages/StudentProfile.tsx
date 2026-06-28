@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ACTIVITY_LABEL, calcDailyTarget, type ActivityLevel } from "@/lib/calorie";
-import { formatNum } from "@/lib/nutrition";
+import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
