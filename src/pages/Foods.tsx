@@ -159,6 +159,12 @@ const Foods = () => {
             searchPlaceholder="Cari makanan..."
             emptyMessage="Belum ada makanan."
             columns={[
+              {
+                key: "img", header: "", sortable: false,
+                cell: (f) => f.image_url
+                  ? <img src={f.image_url} alt={f.name} className="h-10 w-10 rounded object-cover border" />
+                  : <div className="h-10 w-10 rounded border flex items-center justify-center bg-muted"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>,
+              },
               { key: "name", header: "Nama", accessor: (f) => f.name, cell: (f) => <span className="font-medium">{f.name}</span> },
               { key: "calories", header: "Kal", accessor: (f) => f.calories, cell: (f) => formatNum(f.calories, 0) },
               { key: "protein", header: "Prot", accessor: (f) => f.protein, cell: (f) => formatNum(f.protein) },
