@@ -14,6 +14,8 @@ import { StudentImportDialog } from "@/components/StudentImportDialog";
 import { ACTIVITY_LABEL, type ActivityLevel } from "@/lib/calorie";
 import { DataTable } from "@/components/DataTable";
 import { DialogDescription } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { computeBMI, bmiCategory, bmiBadgeClass, formatNum } from "@/lib/nutrition";
 
 interface ClassRow { id: string; name: string; }
 interface Student {
