@@ -101,11 +101,22 @@ const StudentMenu = () => {
 
   if (!student) return <Card><CardContent className="p-8 text-center text-muted-foreground">Profil siswa tidak ditemukan.</CardContent></Card>;
 
+  const bmi = computeBMI(student?.weight_kg, student?.height_cm);
+  const bmiCat = bmiCategory(bmi);
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Pesan Makanan</h1>
-        <p className="text-sm text-muted-foreground">Sisa kebutuhan kalori hari ini: <strong>{formatNum(remaining, 0)} kkal</strong></p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Pesan Makanan</h1>
+          <p className="text-sm text-muted-foreground">Sisa kebutuhan kalori hari ini: <strong>{formatNum(remaining, 0)} kkal</strong></p>
+        </div>
+        {bmiCat && (
+          <div className="text-right">
+            <Badge className={bmiBadgeClass(bmiCat)}>Status: {bmiCat}</Badge>
+            <p className="text-[10px] text-muted-foreground mt-0.5">IMT {formatNum(bmi!, 1)} kg/m²</p>
+          </div>
+        )}
       </div>
 
       <Card className="shadow-soft">
