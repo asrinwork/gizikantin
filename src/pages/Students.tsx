@@ -32,6 +32,7 @@ const empty: any = {
 const Students = () => {
   const [list, setList] = useState<Student[]>([]);
   const [classes, setClasses] = useState<ClassRow[]>([]);
+  const [creds, setCreds] = useState<Record<string, { email: string; password: string }>>({});
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
@@ -40,6 +41,8 @@ const Students = () => {
   const [bulkBusy, setBulkBusy] = useState(false);
   const [createBusy, setCreateBusy] = useState(false);
   const [createdInfo, setCreatedInfo] = useState<{ email: string; password: string; name: string } | null>(null);
+  const [credsFor, setCredsFor] = useState<Student | null>(null);
+  const [showPwAll, setShowPwAll] = useState(false);
 
   // reset password
   const [resetFor, setResetFor] = useState<Student | null>(null);
@@ -47,12 +50,16 @@ const Students = () => {
   const [resetResult, setResetResult] = useState<string | null>(null);
 
   const load = async () => {
-    const [s, c] = await Promise.all([
+    const [s, c, cr] = await Promise.all([
       supabase.from("students").select("*").order("class_name").order("full_name"),
       supabase.from("classes").select("id,name").order("name"),
+      supabase.from("student_credentials").select("user_id,email,password"),
     ]);
     setList((s.data ?? []) as any);
     setClasses((c.data ?? []) as any);
+    const map: Record<string, { email: string; password: string }> = {};
+    (cr.data ?? []).forEach((r: any) => { map[r.user_id] = { email: r.email, password: r.password }; });
+    setCreds(map);
   };
   useEffect(() => { load(); }, []);
 
