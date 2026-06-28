@@ -59,6 +59,7 @@ const Foods = () => {
     const payload = {
       name: form.name,
       calories: +form.calories, protein: +form.protein, carbs: +form.carbs, fat: +form.fat, sugar: +form.sugar, price: +form.price,
+      image_url: form.image_url || null,
     };
     if (editing) {
       const { error } = await supabase.from("foods").update(payload).eq("id", editing.id);
@@ -73,6 +74,23 @@ const Foods = () => {
     }
     setOpen(false);
     load();
+  };
+
+  const uploadImage = async (file: File) => {
+    setImgBusy(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user?.id ?? "anon"}/${Date.now()}.${ext}`;
+      const { error: ue } = await supabase.storage.from("food-images").upload(path, file, { upsert: true, contentType: file.type });
+      if (ue) throw ue;
+      // Signed URL (1 year) since bucket is private
+      const { data: signed, error: se } = await supabase.storage.from("food-images").createSignedUrl(path, 60 * 60 * 24 * 365);
+      if (se) throw se;
+      setForm((f: any) => ({ ...f, image_url: signed.signedUrl }));
+      toast.success("Gambar diupload");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Gagal upload");
+    } finally { setImgBusy(false); }
   };
 
   const remove = async (id: string) => {
