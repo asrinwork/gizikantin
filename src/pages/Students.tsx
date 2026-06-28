@@ -381,6 +381,38 @@ const Students = () => {
         </DialogContent>
       </Dialog>
 
+      {/* View credentials */}
+      <Dialog open={!!credsFor} onOpenChange={(o) => { if (!o) { setCredsFor(null); setShowPwAll(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Akun Login Siswa</DialogTitle>
+            <DialogDescription>
+              {credsFor && <>Akun: <b>{credsFor.full_name}</b> ({credsFor.nis})</>}
+            </DialogDescription>
+          </DialogHeader>
+          {credsFor && credsFor.user_id && creds[credsFor.user_id] ? (
+            <div className="space-y-3">
+              <div><Label>Email</Label>
+                <div className="flex gap-2"><Input readOnly value={creds[credsFor.user_id].email} className="font-mono" />
+                  <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(creds[credsFor.user_id!].email); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              <div><Label>Password</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={creds[credsFor.user_id].password} className="font-mono" type={showPwAll ? "text" : "password"} />
+                  <Button type="button" variant="outline" onClick={() => setShowPwAll((v) => !v)}>{showPwAll ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+                  <Button type="button" variant="outline" onClick={() => { navigator.clipboard.writeText(creds[credsFor.user_id!].password); toast.success("Disalin"); }}><Copy className="h-4 w-4" /></Button>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Password disimpan dari proses pembuatan/reset akun. Jika siswa mengubah password sendiri, nilai di sini tidak akan ikut berubah.</p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Password tidak tersedia. Lakukan reset password untuk menghasilkan dan menyimpan password baru.</p>
+          )}
+          <DialogFooter><Button onClick={() => setCredsFor(null)}>Tutup</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <StudentImportDialog open={importOpen} onOpenChange={setImportOpen} onDone={load} />
     </div>
   );
