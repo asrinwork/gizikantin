@@ -57,6 +57,25 @@ const StudentProfile = () => {
         </CardContent>
       </Card>
 
+      {(() => {
+        const bmi = computeBMI(s.weight_kg ? +s.weight_kg : null, s.height_cm ? +s.height_cm : null);
+        const cat = bmiCategory(bmi);
+        if (!cat) return null;
+        return (
+          <Card className="shadow-soft">
+            <CardHeader><CardTitle>Status Berat Badan (IMT)</CardTitle></CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">IMT</p>
+                <p className="text-2xl font-bold">{formatNum(bmi!, 1)} <span className="text-sm font-normal text-muted-foreground">kg/m²</span></p>
+              </div>
+              <Badge className={bmiBadgeClass(cat) + " text-base px-3 py-1"}>{cat}</Badge>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+
       <Card className="shadow-soft">
         <CardHeader><CardTitle>Data Tubuh & Aktivitas</CardTitle></CardHeader>
         <CardContent>
