@@ -21,6 +21,7 @@ import StudentProfile from "./pages/StudentProfile";
 import CanteenOrders from "./pages/CanteenOrders";
 import AuditLogs from "./pages/AuditLogs";
 import Education from "./pages/Education";
+import MBG from "./pages/MBG";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
