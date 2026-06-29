@@ -61,7 +61,7 @@ const StudentMenu = () => {
     return { cal, price, items };
   }, [cart, foods]);
 
-  const consumed = consumedToday + pendingCal;
+  const consumed = consumedToday + pendingCal + mbg;
   const remaining = Math.max(0, target.calories - consumed);
   const wouldExceed = consumed + totals.cal > target.calories;
 
