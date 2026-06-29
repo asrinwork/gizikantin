@@ -112,7 +112,7 @@ const StudentMenu = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Pesan Makanan</h1>
-          <p className="text-sm text-muted-foreground">Sisa kebutuhan kalori hari ini: <strong>{formatNum(remaining, 0)} kkal</strong></p>
+          <p className="text-sm text-muted-foreground">Sisa jatah kalori sekolah: <strong>{formatNum(remaining, 0)} kkal</strong> <span className="text-[11px]">(batas {Math.round(getSchoolShare()*100)}% kebutuhan harian)</span></p>
         </div>
         {bmiCat && (
           <div className="text-right">
