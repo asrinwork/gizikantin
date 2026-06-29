@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { calcDailyTarget } from "@/lib/calorie";
+import { calcDailyTarget, getMbgCaloriesToday, getSchoolShare } from "@/lib/calorie";
 import { recommend } from "@/lib/recommend";
 import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
 import { Search, Plus, Minus, X, Sparkles, AlertTriangle, ShoppingCart, Loader2 } from "lucide-react";
