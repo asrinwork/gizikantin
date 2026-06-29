@@ -19,6 +19,7 @@ import {
   Package,
   ScrollText,
   BookOpen,
+  Gift,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -43,6 +44,7 @@ const NAV: NavItem[] = [
   { to: "/kelas", label: "Kelas", icon: School, roles: ["admin"] },
   { to: "/users", label: "User & Peran", icon: UserCog, roles: ["admin"] },
   { to: "/target", label: "Target Gizi", icon: Target, roles: ["admin"] },
+  { to: "/mbg", label: "MBG & Jatah", icon: Gift, roles: ["admin"] },
   { to: "/audit", label: "Audit Log", icon: ScrollText, roles: ["admin"] },
 ];
 

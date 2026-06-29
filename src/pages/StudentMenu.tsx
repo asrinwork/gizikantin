@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { calcDailyTarget } from "@/lib/calorie";
+import { calcDailyTarget, getMbgCaloriesToday, getSchoolShare } from "@/lib/calorie";
 import { recommend } from "@/lib/recommend";
 import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
 import { Search, Plus, Minus, X, Sparkles, AlertTriangle, ShoppingCart, Loader2 } from "lucide-react";
@@ -22,6 +22,7 @@ const StudentMenu = () => {
   const [foods, setFoods] = useState<any[]>([]);
   const [consumedToday, setConsumedToday] = useState(0);
   const [pendingCal, setPendingCal] = useState(0);
+  const [mbg, setMbg] = useState(0);
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
@@ -32,6 +33,8 @@ const StudentMenu = () => {
     setStudent(s);
     const { data: f } = await supabase.from("foods").select("*").order("name");
     setFoods(f ?? []);
+    const mbgCal = await getMbgCaloriesToday();
+    setMbg(mbgCal);
     if (s) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const { data: tx } = await supabase.from("transactions")
@@ -58,7 +61,7 @@ const StudentMenu = () => {
     return { cal, price, items };
   }, [cart, foods]);
 
-  const consumed = consumedToday + pendingCal;
+  const consumed = consumedToday + pendingCal + mbg;
   const remaining = Math.max(0, target.calories - consumed);
   const wouldExceed = consumed + totals.cal > target.calories;
 
@@ -109,7 +112,7 @@ const StudentMenu = () => {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Pesan Makanan</h1>
-          <p className="text-sm text-muted-foreground">Sisa kebutuhan kalori hari ini: <strong>{formatNum(remaining, 0)} kkal</strong></p>
+          <p className="text-sm text-muted-foreground">Sisa jatah kalori sekolah: <strong>{formatNum(remaining, 0)} kkal</strong> <span className="text-[11px]">(batas {Math.round(getSchoolShare()*100)}% kebutuhan harian)</span></p>
         </div>
         {bmiCat && (
           <div className="text-right">
@@ -122,10 +125,13 @@ const StudentMenu = () => {
       <Card className="shadow-soft">
         <CardContent className="p-4 space-y-2">
           <div className="flex justify-between text-xs">
-            <span>Sudah dikonsumsi + dipesan</span>
+            <span>Sudah dikonsumsi + dipesan{mbg > 0 ? " + MBG" : ""}</span>
             <span>{formatNum(consumed, 0)} / {formatNum(target.calories, 0)} kkal</span>
           </div>
           <Progress value={Math.min(100, (consumed / target.calories) * 100)} className="h-2" />
+          {mbg > 0 && (
+            <p className="text-[11px] text-muted-foreground">Termasuk MBG sekolah hari ini: <strong>{formatNum(mbg, 0)} kkal</strong></p>
+          )}
         </CardContent>
       </Card>
 

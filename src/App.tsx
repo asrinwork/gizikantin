@@ -21,6 +21,7 @@ import StudentProfile from "./pages/StudentProfile";
 import CanteenOrders from "./pages/CanteenOrders";
 import AuditLogs from "./pages/AuditLogs";
 import Education from "./pages/Education";
+import MBG from "./pages/MBG";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/users" element={<ProtectedRoute roles={["admin"]}><Users /></ProtectedRoute>} />
               <Route path="/audit" element={<ProtectedRoute roles={["admin"]}><AuditLogs /></ProtectedRoute>} />
               <Route path="/target" element={<ProtectedRoute roles={["admin"]}><Target /></ProtectedRoute>} />
+              <Route path="/mbg" element={<ProtectedRoute roles={["admin"]}><MBG /></ProtectedRoute>} />
               <Route path="/grafik" element={<ProtectedRoute roles={["admin","guru","wali_kelas","kepala_sekolah"]}><Charts /></ProtectedRoute>} />
               <Route path="/menu" element={<ProtectedRoute roles={["siswa"]}><StudentMenu /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute roles={["siswa"]}><StudentOrders /></ProtectedRoute>} />

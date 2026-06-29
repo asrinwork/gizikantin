@@ -40,19 +40,37 @@ export const ACTIVITY_LABEL: Record<ActivityLevel, string> = {
 // Module-level dynamic config (hydrated from DB)
 let FORMULAS: BmrFormula[] = DEFAULT_FORMULAS;
 let FACTORS: Record<string, number> = { ...DEFAULT_ACTIVITY };
+let SCHOOL_SHARE = 0.65;
 
 export const loadBmrConfig = async () => {
   try {
-    const [{ data: fs }, { data: af }] = await Promise.all([
+    const [{ data: fs }, { data: af }, { data: ss }] = await Promise.all([
       supabase.from("bmr_formulas" as any).select("gender,age_min,age_max,coef_weight,coef_height,constant,label"),
       supabase.from("activity_factors" as any).select("key,factor"),
+      supabase.from("school_settings" as any).select("school_share_pct").eq("id", 1).maybeSingle(),
     ]);
     if (fs && fs.length) FORMULAS = fs as any;
     if (af && af.length) {
       FACTORS = {};
       for (const r of af as any[]) FACTORS[r.key] = Number(r.factor);
     }
+    if (ss && (ss as any).school_share_pct) SCHOOL_SHARE = Number((ss as any).school_share_pct);
   } catch { /* keep defaults */ }
+};
+
+export const getSchoolShare = () => SCHOOL_SHARE;
+export const setSchoolShare = (v: number) => { SCHOOL_SHARE = v; };
+
+export const getMbgCaloriesToday = async (): Promise<number> => {
+  try {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    const { data } = await supabase.from("mbg_entries" as any).select("calories").eq("entry_date", dateStr);
+    return (data ?? []).reduce((s: number, r: any) => s + Number(r.calories || 0), 0);
+  } catch { return 0; }
 };
 
 export const ageFromBirthdate = (birthDate: string | null | undefined): number => {
@@ -83,6 +101,17 @@ export interface DailyTarget {
   calories: number; protein: number; carbs: number; fat: number; sugar: number;
 }
 
+const scaleTarget = (full: DailyTarget): DailyTarget => {
+  const calories = Math.round(full.calories * SCHOOL_SHARE);
+  return {
+    calories,
+    protein: Math.round((calories * 0.15) / 4),
+    carbs: Math.round((calories * 0.55) / 4),
+    fat: Math.round((calories * 0.30) / 9),
+    sugar: Math.round((calories * 0.10) / 4),
+  };
+};
+
 export const calcDailyTarget = (
   p: {
     gender?: "L" | "P" | null;
@@ -91,6 +120,21 @@ export const calcDailyTarget = (
     weight_kg?: number | null;
     activity_level?: ActivityLevel | null;
   },
+  fallback: DailyTarget = { calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 },
+): DailyTarget => {
+  const { gender, birth_date, height_cm, weight_kg, activity_level } = p;
+  if (!height_cm || !weight_kg || !birth_date) return scaleTarget(fallback);
+  const age = ageFromBirthdate(birth_date);
+  const bmr = calcBMR({ gender: (gender ?? "L") as "L" | "P", age, height_cm, weight_kg });
+  if (!bmr || bmr <= 0) return scaleTarget(fallback);
+  const factor = FACTORS[activity_level ?? "light"] ?? 1.375;
+  const fullCalories = Math.round(bmr * factor);
+  return scaleTarget({ calories: fullCalories, protein: 0, carbs: 0, fat: 0, sugar: 0 });
+};
+
+// Returns the full (24h) daily target without school share applied
+export const calcFullDailyTarget = (
+  p: Parameters<typeof calcDailyTarget>[0],
   fallback: DailyTarget = { calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 },
 ): DailyTarget => {
   const { gender, birth_date, height_cm, weight_kg, activity_level } = p;

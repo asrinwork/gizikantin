@@ -265,6 +265,33 @@ export type Database = {
         }
         Relationships: []
       }
+      mbg_entries: {
+        Row: {
+          calories: number
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          calories: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          calories?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
       nutrition_targets: {
         Row: {
           calories: number
@@ -405,6 +432,24 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+        }
+        Relationships: []
+      }
+      school_settings: {
+        Row: {
+          id: number
+          school_share_pct: number
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          school_share_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          school_share_pct?: number
+          updated_at?: string
         }
         Relationships: []
       }

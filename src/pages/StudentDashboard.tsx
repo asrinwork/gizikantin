@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { calcDailyTarget } from "@/lib/calorie";
+import { calcDailyTarget, getMbgCaloriesToday, getSchoolShare } from "@/lib/calorie";
 import { recommend } from "@/lib/recommend";
 import { formatNum, computeStatus, statusColor, statusLabel } from "@/lib/nutrition";
 import { StudentBarcode } from "@/components/StudentBarcode";
@@ -18,6 +18,8 @@ const StudentDashboard = () => {
   const [foods, setFoods] = useState<any[]>([]);
   const [consumed, setConsumed] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 });
 
+  const [mbg, setMbg] = useState(0);
+
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -25,6 +27,8 @@ const StudentDashboard = () => {
       setStudent(s);
       const { data: f } = await supabase.from("foods").select("*").order("name");
       setFoods((f ?? []));
+      const mbgCal = await getMbgCaloriesToday();
+      setMbg(mbgCal);
       if (s) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const { data: tx } = await supabase
@@ -43,6 +47,8 @@ const StudentDashboard = () => {
             sugar: acc.sugar + +f.sugar * q,
           };
         }, { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 });
+        // include MBG calories from admin (free school meal)
+        c.calories += mbgCal;
         setConsumed(c);
       }
     })();
@@ -82,8 +88,11 @@ const StudentDashboard = () => {
           <CardContent className="space-y-4">
             <div className="text-center py-4">
               <p className="text-5xl font-bold text-primary">{formatNum(consumed.calories, 0)}</p>
-              <p className="text-sm text-muted-foreground mt-1">dari target {formatNum(target.calories, 0)} kkal</p>
+              <p className="text-sm text-muted-foreground mt-1">dari batas {formatNum(target.calories, 0)} kkal (jatah sekolah {Math.round(getSchoolShare() * 100)}%)</p>
               <p className="text-xs mt-2">Sisa: <span className="font-semibold">{formatNum(remaining, 0)} kkal</span></p>
+              {mbg > 0 && (
+                <p className="text-[11px] text-muted-foreground mt-1">Termasuk MBG hari ini: <span className="font-semibold">{formatNum(mbg, 0)} kkal</span></p>
+              )}
             </div>
             <Progress value={calPct} className="h-3" />
             <div className="grid grid-cols-4 gap-2 text-xs text-center">
