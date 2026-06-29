@@ -22,6 +22,7 @@ const StudentMenu = () => {
   const [foods, setFoods] = useState<any[]>([]);
   const [consumedToday, setConsumedToday] = useState(0);
   const [pendingCal, setPendingCal] = useState(0);
+  const [mbg, setMbg] = useState(0);
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
@@ -32,6 +33,8 @@ const StudentMenu = () => {
     setStudent(s);
     const { data: f } = await supabase.from("foods").select("*").order("name");
     setFoods(f ?? []);
+    const mbgCal = await getMbgCaloriesToday();
+    setMbg(mbgCal);
     if (s) {
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const { data: tx } = await supabase.from("transactions")
