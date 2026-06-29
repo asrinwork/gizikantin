@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { calcDailyTarget } from "@/lib/calorie";
+import { calcDailyTarget, getMbgCaloriesToday, getSchoolShare } from "@/lib/calorie";
 import { recommend } from "@/lib/recommend";
 import { formatNum, computeStatus, statusColor, statusLabel } from "@/lib/nutrition";
 import { StudentBarcode } from "@/components/StudentBarcode";
