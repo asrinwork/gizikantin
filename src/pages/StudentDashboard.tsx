@@ -88,8 +88,11 @@ const StudentDashboard = () => {
           <CardContent className="space-y-4">
             <div className="text-center py-4">
               <p className="text-5xl font-bold text-primary">{formatNum(consumed.calories, 0)}</p>
-              <p className="text-sm text-muted-foreground mt-1">dari target {formatNum(target.calories, 0)} kkal</p>
+              <p className="text-sm text-muted-foreground mt-1">dari batas {formatNum(target.calories, 0)} kkal (jatah sekolah {Math.round(getSchoolShare() * 100)}%)</p>
               <p className="text-xs mt-2">Sisa: <span className="font-semibold">{formatNum(remaining, 0)} kkal</span></p>
+              {mbg > 0 && (
+                <p className="text-[11px] text-muted-foreground mt-1">Termasuk MBG hari ini: <span className="font-semibold">{formatNum(mbg, 0)} kkal</span></p>
+              )}
             </div>
             <Progress value={calPct} className="h-3" />
             <div className="grid grid-cols-4 gap-2 text-xs text-center">
