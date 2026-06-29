@@ -18,6 +18,8 @@ const StudentDashboard = () => {
   const [foods, setFoods] = useState<any[]>([]);
   const [consumed, setConsumed] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 });
 
+  const [mbg, setMbg] = useState(0);
+
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -25,6 +27,8 @@ const StudentDashboard = () => {
       setStudent(s);
       const { data: f } = await supabase.from("foods").select("*").order("name");
       setFoods((f ?? []));
+      const mbgCal = await getMbgCaloriesToday();
+      setMbg(mbgCal);
       if (s) {
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const { data: tx } = await supabase
@@ -43,6 +47,8 @@ const StudentDashboard = () => {
             sugar: acc.sugar + +f.sugar * q,
           };
         }, { calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0 });
+        // include MBG calories from admin (free school meal)
+        c.calories += mbgCal;
         setConsumed(c);
       }
     })();
