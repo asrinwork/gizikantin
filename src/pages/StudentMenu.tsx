@@ -125,10 +125,13 @@ const StudentMenu = () => {
       <Card className="shadow-soft">
         <CardContent className="p-4 space-y-2">
           <div className="flex justify-between text-xs">
-            <span>Sudah dikonsumsi + dipesan</span>
+            <span>Sudah dikonsumsi + dipesan{mbg > 0 ? " + MBG" : ""}</span>
             <span>{formatNum(consumed, 0)} / {formatNum(target.calories, 0)} kkal</span>
           </div>
           <Progress value={Math.min(100, (consumed / target.calories) * 100)} className="h-2" />
+          {mbg > 0 && (
+            <p className="text-[11px] text-muted-foreground">Termasuk MBG sekolah hari ini: <strong>{formatNum(mbg, 0)} kkal</strong></p>
+          )}
         </CardContent>
       </Card>
 
