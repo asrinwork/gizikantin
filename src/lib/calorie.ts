@@ -101,6 +101,17 @@ export interface DailyTarget {
   calories: number; protein: number; carbs: number; fat: number; sugar: number;
 }
 
+const scaleTarget = (full: DailyTarget): DailyTarget => {
+  const calories = Math.round(full.calories * SCHOOL_SHARE);
+  return {
+    calories,
+    protein: Math.round((calories * 0.15) / 4),
+    carbs: Math.round((calories * 0.55) / 4),
+    fat: Math.round((calories * 0.30) / 9),
+    sugar: Math.round((calories * 0.10) / 4),
+  };
+};
+
 export const calcDailyTarget = (
   p: {
     gender?: "L" | "P" | null;
@@ -109,6 +120,21 @@ export const calcDailyTarget = (
     weight_kg?: number | null;
     activity_level?: ActivityLevel | null;
   },
+  fallback: DailyTarget = { calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 },
+): DailyTarget => {
+  const { gender, birth_date, height_cm, weight_kg, activity_level } = p;
+  if (!height_cm || !weight_kg || !birth_date) return scaleTarget(fallback);
+  const age = ageFromBirthdate(birth_date);
+  const bmr = calcBMR({ gender: (gender ?? "L") as "L" | "P", age, height_cm, weight_kg });
+  if (!bmr || bmr <= 0) return scaleTarget(fallback);
+  const factor = FACTORS[activity_level ?? "light"] ?? 1.375;
+  const fullCalories = Math.round(bmr * factor);
+  return scaleTarget({ calories: fullCalories, protein: 0, carbs: 0, fat: 0, sugar: 0 });
+};
+
+// Returns the full (24h) daily target without school share applied
+export const calcFullDailyTarget = (
+  p: Parameters<typeof calcDailyTarget>[0],
   fallback: DailyTarget = { calories: 2000, protein: 50, carbs: 275, fat: 65, sugar: 50 },
 ): DailyTarget => {
   const { gender, birth_date, height_cm, weight_kg, activity_level } = p;
