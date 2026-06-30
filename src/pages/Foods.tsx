@@ -67,14 +67,38 @@ const Foods = () => {
   useEffect(() => { load(); }, []);
 
   const startNew = () => { setEditing(null); setForm(empty); setOpen(true); };
-  const startEdit = (f: Food) => { setEditing(f); setForm(f); setOpen(true); };
+  const startEdit = (f: Food) => {
+    setEditing(f);
+    setForm({
+      ...empty, ...f,
+      classification: f.classification ?? 1,
+      total_sugar: f.total_sugar ?? 0,
+      total_lactose: f.total_lactose ?? 0,
+      serving_volume_ml: f.serving_volume_ml ?? 0,
+    });
+    setOpen(true);
+  };
+
+  // Auto-computed sugar per 100 ml & label
+  const sugarPer100 = computeSugarPer100ml(form.total_sugar, form.total_lactose, form.serving_volume_ml);
+  const sLabel = sugarLabelFromValue(sugarPer100);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const sp100 = sugarPer100;
+    const slab = sugarLabelFromValue(sp100);
     const payload = {
       name: form.name,
-      calories: +form.calories, protein: +form.protein, carbs: +form.carbs, fat: +form.fat, sugar: +form.sugar, price: +form.price,
+      calories: +form.calories, protein: +form.protein, carbs: +form.carbs, fat: +form.fat,
+      sugar: sp100 ?? 0,
+      price: +form.price,
       image_url: form.image_url || null,
+      classification: Number(form.classification) || null,
+      total_sugar: +form.total_sugar || 0,
+      total_lactose: +form.total_lactose || 0,
+      serving_volume_ml: +form.serving_volume_ml || 0,
+      sugar_per_100ml: sp100,
+      sugar_label: slab,
     };
     if (editing) {
       const { error } = await supabase.from("foods").update(payload).eq("id", editing.id);
