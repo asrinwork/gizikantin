@@ -142,7 +142,7 @@ const Foods = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "name,calories,protein,carbs,fat,sugar,price\nNasi Ayam Goreng,520,28,60,18,2,15000\nJus Jeruk,110,1,26,0,22,8000\n";
+    const csv = "name,calories,protein,carbs,fat,total_sugar,total_lactose,serving_volume_ml,price,classification\nNasi Ayam Goreng,520,28,60,18,2,0,250,15000,3\nJus Jeruk,110,1,26,0,22,0,250,8000,4\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "menu_template.csv"; a.click();
   };
@@ -155,14 +155,26 @@ const Foods = () => {
     for (const r of rows) {
       const name = (r.name || "").trim();
       if (!name) { failed.push({ name: "(kosong)", error: "name wajib" }); continue; }
+      const ts = Number(r.total_sugar) || 0;
+      const tl = Number(r.total_lactose) || 0;
+      const vol = Number(r.serving_volume_ml) || 0;
+      const sp100 = computeSugarPer100ml(ts, tl, vol);
+      const slab = sugarLabelFromValue(sp100);
+      const cls = Number(r.classification);
       const payload = {
         name,
         calories: Number(r.calories) || 0,
         protein: Number(r.protein) || 0,
         carbs: Number(r.carbs) || 0,
         fat: Number(r.fat) || 0,
-        sugar: Number(r.sugar) || 0,
+        sugar: sp100 ?? (Number(r.sugar) || 0),
         price: Number(r.price) || 0,
+        classification: cls >= 1 && cls <= 4 ? cls : null,
+        total_sugar: ts,
+        total_lactose: tl,
+        serving_volume_ml: vol,
+        sugar_per_100ml: sp100,
+        sugar_label: slab,
         created_by: user?.id,
       };
       const { error } = await supabase.from("foods").insert(payload);
