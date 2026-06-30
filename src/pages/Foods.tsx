@@ -205,11 +205,27 @@ const Foods = () => {
                   : <div className="h-10 w-10 rounded border flex items-center justify-center bg-muted"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>,
               },
               { key: "name", header: "Nama", accessor: (f) => f.name, cell: (f) => <span className="font-medium">{f.name}</span> },
+              {
+                key: "class", header: "Klasifikasi",
+                accessor: (f) => f.classification ?? 0,
+                cell: (f) => f.classification
+                  ? <Badge variant="outline" className={novaBadgeClass(f.classification)}>{f.classification} — {NOVA_LABELS[f.classification as 1|2|3|4]}</Badge>
+                  : <span className="text-xs text-muted-foreground">—</span>,
+              },
+              {
+                key: "label", header: "Label Gula",
+                accessor: (f) => f.sugar_label ?? "",
+                cell: (f) => f.sugar_label
+                  ? <Badge className={sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].badgeClass}>
+                      {f.sugar_label} — {sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].name}
+                    </Badge>
+                  : <span className="text-xs text-muted-foreground">—</span>,
+              },
               { key: "calories", header: "Kal", accessor: (f) => f.calories, cell: (f) => formatNum(f.calories, 0) },
               { key: "protein", header: "Prot", accessor: (f) => f.protein, cell: (f) => formatNum(f.protein) },
               { key: "carbs", header: "Karbo", accessor: (f) => f.carbs, cell: (f) => formatNum(f.carbs) },
               { key: "fat", header: "Lemak", accessor: (f) => f.fat, cell: (f) => formatNum(f.fat) },
-              { key: "sugar", header: "Gula", accessor: (f) => f.sugar, cell: (f) => formatNum(f.sugar) },
+              { key: "sugar", header: "Gula/100ml", accessor: (f) => f.sugar_per_100ml ?? 0, cell: (f) => f.sugar_per_100ml != null ? formatNum(f.sugar_per_100ml) : "—" },
               { key: "price", header: "Harga", accessor: (f) => f.price, cell: (f) => `Rp${formatNum(f.price, 0)}` },
               {
                 key: "act", header: "", sortable: false, align: "right",
