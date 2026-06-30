@@ -274,13 +274,49 @@ const Foods = () => {
               </div>
             </div>
             <div><Label>Nama</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+
+            <div>
+              <Label>Klasifikasi Makanan (NOVA)</Label>
+              <Select value={String(form.classification ?? 1)} onValueChange={(v) => setForm({ ...form, classification: Number(v) })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {NOVA_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Kalori (kkal)</Label><Input type="number" step="0.1" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} /></div>
               <div><Label>Protein (g)</Label><Input type="number" step="0.1" value={form.protein} onChange={(e) => setForm({ ...form, protein: e.target.value })} /></div>
               <div><Label>Karbohidrat (g)</Label><Input type="number" step="0.1" value={form.carbs} onChange={(e) => setForm({ ...form, carbs: e.target.value })} /></div>
               <div><Label>Lemak (g)</Label><Input type="number" step="0.1" value={form.fat} onChange={(e) => setForm({ ...form, fat: e.target.value })} /></div>
-              <div><Label>Gula (g)</Label><Input type="number" step="0.1" value={form.sugar} onChange={(e) => setForm({ ...form, sugar: e.target.value })} /></div>
               <div><Label>Harga (Rp)</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+            </div>
+
+            <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground">Pelabelan Gula (otomatis)</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="text-xs">Total Gula (g)</Label><Input type="number" step="0.1" value={form.total_sugar} onChange={(e) => setForm({ ...form, total_sugar: e.target.value })} /></div>
+                <div><Label className="text-xs">Total Laktosa (g)</Label><Input type="number" step="0.1" value={form.total_lactose} onChange={(e) => setForm({ ...form, total_lactose: e.target.value })} /></div>
+                <div><Label className="text-xs">Volume/Sajian (ml)</Label><Input type="number" step="0.1" value={form.serving_volume_ml} onChange={(e) => setForm({ ...form, serving_volume_ml: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div>
+                  <Label className="text-xs">Gula per 100 ml (g)</Label>
+                  <Input type="number" disabled value={sugarPer100 ?? ""} placeholder="—" />
+                </div>
+                <div>
+                  <Label className="text-xs">Label</Label>
+                  <div className="h-10 flex items-center">
+                    {sLabel
+                      ? <Badge className={sugarLabelMeta[sLabel].badgeClass}>{sLabel} — {sugarLabelMeta[sLabel].name}</Badge>
+                      : <span className="text-xs text-muted-foreground">Isi Total Gula & Volume</span>}
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Rumus: (Total Gula − Laktosa) × (100 / Volume per Sajian). Ambang: A ≤ 1, B 1–5, C 5–10, D &gt; 10.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
