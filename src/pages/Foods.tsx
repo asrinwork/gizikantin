@@ -343,7 +343,7 @@ const Foods = () => {
           <DialogHeader><DialogTitle>Import CSV Menu</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Kolom: <code>name,calories,protein,carbs,fat,sugar,price</code>
+              Kolom: <code>name,calories,protein,carbs,fat,total_sugar,total_lactose,serving_volume_ml,price,classification</code>
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>
