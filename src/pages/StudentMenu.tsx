@@ -11,6 +11,7 @@ import { calcDailyTarget, getMbgCaloriesToday, getSchoolShare } from "@/lib/calo
 import { recommend } from "@/lib/recommend";
 import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
 import { Search, Plus, Minus, X, Sparkles, AlertTriangle, ShoppingCart, Loader2 } from "lucide-react";
+import { NOVA_LABELS, novaBadgeClass, sugarLabelMeta } from "@/lib/food-labels";
 import { toast } from "sonner";
 
 const rupiah = (n: number) => "Rp " + Number(n ?? 0).toLocaleString("id-ID");
