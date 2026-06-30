@@ -14,15 +14,30 @@ import { formatNum } from "@/lib/nutrition";
 import { logAudit } from "@/lib/audit";
 import { DataTable } from "@/components/DataTable";
 import { parseCSV } from "@/lib/csv";
+import {
+  NOVA_OPTIONS, NOVA_LABELS, novaBadgeClass,
+  computeSugarPer100ml, sugarLabelFromValue, sugarLabelMeta,
+} from "@/lib/food-labels";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Food {
   id: string;
   name: string;
   calories: number; protein: number; carbs: number; fat: number; sugar: number; price: number;
   image_url?: string | null;
+  classification?: number | null;
+  total_sugar?: number | null;
+  total_lactose?: number | null;
+  serving_volume_ml?: number | null;
+  sugar_per_100ml?: number | null;
+  sugar_label?: string | null;
 }
 
-const empty = { name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0, image_url: "" };
+const empty = {
+  name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0, image_url: "",
+  classification: 1, total_sugar: 0, total_lactose: 0, serving_volume_ml: 0,
+};
 
 const Foods = () => {
   const { user } = useAuth();
