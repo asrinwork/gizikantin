@@ -14,15 +14,30 @@ import { formatNum } from "@/lib/nutrition";
 import { logAudit } from "@/lib/audit";
 import { DataTable } from "@/components/DataTable";
 import { parseCSV } from "@/lib/csv";
+import {
+  NOVA_OPTIONS, NOVA_LABELS, novaBadgeClass,
+  computeSugarPer100ml, sugarLabelFromValue, sugarLabelMeta,
+} from "@/lib/food-labels";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Food {
   id: string;
   name: string;
   calories: number; protein: number; carbs: number; fat: number; sugar: number; price: number;
   image_url?: string | null;
+  classification?: number | null;
+  total_sugar?: number | null;
+  total_lactose?: number | null;
+  serving_volume_ml?: number | null;
+  sugar_per_100ml?: number | null;
+  sugar_label?: string | null;
 }
 
-const empty = { name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0, image_url: "" };
+const empty = {
+  name: "", calories: 0, protein: 0, carbs: 0, fat: 0, sugar: 0, price: 0, image_url: "",
+  classification: 1, total_sugar: 0, total_lactose: 0, serving_volume_ml: 0,
+};
 
 const Foods = () => {
   const { user } = useAuth();
@@ -52,14 +67,38 @@ const Foods = () => {
   useEffect(() => { load(); }, []);
 
   const startNew = () => { setEditing(null); setForm(empty); setOpen(true); };
-  const startEdit = (f: Food) => { setEditing(f); setForm(f); setOpen(true); };
+  const startEdit = (f: Food) => {
+    setEditing(f);
+    setForm({
+      ...empty, ...f,
+      classification: f.classification ?? 1,
+      total_sugar: f.total_sugar ?? 0,
+      total_lactose: f.total_lactose ?? 0,
+      serving_volume_ml: f.serving_volume_ml ?? 0,
+    });
+    setOpen(true);
+  };
+
+  // Auto-computed sugar per 100 ml & label
+  const sugarPer100 = computeSugarPer100ml(form.total_sugar, form.total_lactose, form.serving_volume_ml);
+  const sLabel = sugarLabelFromValue(sugarPer100);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const sp100 = sugarPer100;
+    const slab = sugarLabelFromValue(sp100);
     const payload = {
       name: form.name,
-      calories: +form.calories, protein: +form.protein, carbs: +form.carbs, fat: +form.fat, sugar: +form.sugar, price: +form.price,
+      calories: +form.calories, protein: +form.protein, carbs: +form.carbs, fat: +form.fat,
+      sugar: sp100 ?? 0,
+      price: +form.price,
       image_url: form.image_url || null,
+      classification: Number(form.classification) || null,
+      total_sugar: +form.total_sugar || 0,
+      total_lactose: +form.total_lactose || 0,
+      serving_volume_ml: +form.serving_volume_ml || 0,
+      sugar_per_100ml: sp100,
+      sugar_label: slab,
     };
     if (editing) {
       const { error } = await supabase.from("foods").update(payload).eq("id", editing.id);
@@ -103,7 +142,7 @@ const Foods = () => {
   };
 
   const downloadTemplate = () => {
-    const csv = "name,calories,protein,carbs,fat,sugar,price\nNasi Ayam Goreng,520,28,60,18,2,15000\nJus Jeruk,110,1,26,0,22,8000\n";
+    const csv = "name,calories,protein,carbs,fat,total_sugar,total_lactose,serving_volume_ml,price,classification\nNasi Ayam Goreng,520,28,60,18,2,0,250,15000,3\nJus Jeruk,110,1,26,0,22,0,250,8000,4\n";
     const blob = new Blob([csv], { type: "text/csv" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "menu_template.csv"; a.click();
   };
@@ -116,14 +155,26 @@ const Foods = () => {
     for (const r of rows) {
       const name = (r.name || "").trim();
       if (!name) { failed.push({ name: "(kosong)", error: "name wajib" }); continue; }
+      const ts = Number(r.total_sugar) || 0;
+      const tl = Number(r.total_lactose) || 0;
+      const vol = Number(r.serving_volume_ml) || 0;
+      const sp100 = computeSugarPer100ml(ts, tl, vol);
+      const slab = sugarLabelFromValue(sp100);
+      const cls = Number(r.classification);
       const payload = {
         name,
         calories: Number(r.calories) || 0,
         protein: Number(r.protein) || 0,
         carbs: Number(r.carbs) || 0,
         fat: Number(r.fat) || 0,
-        sugar: Number(r.sugar) || 0,
+        sugar: sp100 ?? (Number(r.sugar) || 0),
         price: Number(r.price) || 0,
+        classification: cls >= 1 && cls <= 4 ? cls : null,
+        total_sugar: ts,
+        total_lactose: tl,
+        serving_volume_ml: vol,
+        sugar_per_100ml: sp100,
+        sugar_label: slab,
         created_by: user?.id,
       };
       const { error } = await supabase.from("foods").insert(payload);
@@ -166,11 +217,27 @@ const Foods = () => {
                   : <div className="h-10 w-10 rounded border flex items-center justify-center bg-muted"><ImageIcon className="h-4 w-4 text-muted-foreground" /></div>,
               },
               { key: "name", header: "Nama", accessor: (f) => f.name, cell: (f) => <span className="font-medium">{f.name}</span> },
+              {
+                key: "class", header: "Klasifikasi",
+                accessor: (f) => f.classification ?? 0,
+                cell: (f) => f.classification
+                  ? <Badge variant="outline" className={novaBadgeClass(f.classification)}>{f.classification} — {NOVA_LABELS[f.classification as 1|2|3|4]}</Badge>
+                  : <span className="text-xs text-muted-foreground">—</span>,
+              },
+              {
+                key: "label", header: "Label Gula",
+                accessor: (f) => f.sugar_label ?? "",
+                cell: (f) => f.sugar_label
+                  ? <Badge className={sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].badgeClass}>
+                      {f.sugar_label} — {sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].name}
+                    </Badge>
+                  : <span className="text-xs text-muted-foreground">—</span>,
+              },
               { key: "calories", header: "Kal", accessor: (f) => f.calories, cell: (f) => formatNum(f.calories, 0) },
               { key: "protein", header: "Prot", accessor: (f) => f.protein, cell: (f) => formatNum(f.protein) },
               { key: "carbs", header: "Karbo", accessor: (f) => f.carbs, cell: (f) => formatNum(f.carbs) },
               { key: "fat", header: "Lemak", accessor: (f) => f.fat, cell: (f) => formatNum(f.fat) },
-              { key: "sugar", header: "Gula", accessor: (f) => f.sugar, cell: (f) => formatNum(f.sugar) },
+              { key: "sugar", header: "Gula/100ml", accessor: (f) => f.sugar_per_100ml ?? 0, cell: (f) => f.sugar_per_100ml != null ? formatNum(f.sugar_per_100ml) : "—" },
               { key: "price", header: "Harga", accessor: (f) => f.price, cell: (f) => `Rp${formatNum(f.price, 0)}` },
               {
                 key: "act", header: "", sortable: false, align: "right",
@@ -219,13 +286,49 @@ const Foods = () => {
               </div>
             </div>
             <div><Label>Nama</Label><Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+
+            <div>
+              <Label>Klasifikasi Makanan (NOVA)</Label>
+              <Select value={String(form.classification ?? 1)} onValueChange={(v) => setForm({ ...form, classification: Number(v) })}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {NOVA_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Kalori (kkal)</Label><Input type="number" step="0.1" value={form.calories} onChange={(e) => setForm({ ...form, calories: e.target.value })} /></div>
               <div><Label>Protein (g)</Label><Input type="number" step="0.1" value={form.protein} onChange={(e) => setForm({ ...form, protein: e.target.value })} /></div>
               <div><Label>Karbohidrat (g)</Label><Input type="number" step="0.1" value={form.carbs} onChange={(e) => setForm({ ...form, carbs: e.target.value })} /></div>
               <div><Label>Lemak (g)</Label><Input type="number" step="0.1" value={form.fat} onChange={(e) => setForm({ ...form, fat: e.target.value })} /></div>
-              <div><Label>Gula (g)</Label><Input type="number" step="0.1" value={form.sugar} onChange={(e) => setForm({ ...form, sugar: e.target.value })} /></div>
               <div><Label>Harga (Rp)</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></div>
+            </div>
+
+            <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground">Pelabelan Gula (otomatis)</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="text-xs">Total Gula (g)</Label><Input type="number" step="0.1" value={form.total_sugar} onChange={(e) => setForm({ ...form, total_sugar: e.target.value })} /></div>
+                <div><Label className="text-xs">Total Laktosa (g)</Label><Input type="number" step="0.1" value={form.total_lactose} onChange={(e) => setForm({ ...form, total_lactose: e.target.value })} /></div>
+                <div><Label className="text-xs">Volume/Sajian (ml)</Label><Input type="number" step="0.1" value={form.serving_volume_ml} onChange={(e) => setForm({ ...form, serving_volume_ml: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div>
+                  <Label className="text-xs">Gula per 100 ml (g)</Label>
+                  <Input type="number" disabled value={sugarPer100 ?? ""} placeholder="—" />
+                </div>
+                <div>
+                  <Label className="text-xs">Label</Label>
+                  <div className="h-10 flex items-center">
+                    {sLabel
+                      ? <Badge className={sugarLabelMeta[sLabel].badgeClass}>{sLabel} — {sugarLabelMeta[sLabel].name}</Badge>
+                      : <span className="text-xs text-muted-foreground">Isi Total Gula & Volume</span>}
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">Rumus: (Total Gula − Laktosa) × (100 / Volume per Sajian). Ambang: A ≤ 1, B 1–5, C 5–10, D &gt; 10.</p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Batal</Button>
@@ -240,7 +343,7 @@ const Foods = () => {
           <DialogHeader><DialogTitle>Import CSV Menu</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              Kolom: <code>name,calories,protein,carbs,fat,sugar,price</code>
+              Kolom: <code>name,calories,protein,carbs,fat,total_sugar,total_lactose,serving_volume_ml,price,classification</code>
             </p>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" size="sm" onClick={downloadTemplate}>

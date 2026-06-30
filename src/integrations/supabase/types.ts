@@ -227,6 +227,7 @@ export type Database = {
         Row: {
           calories: number
           carbs: number
+          classification: number | null
           created_at: string
           created_by: string | null
           fat: number
@@ -235,11 +236,17 @@ export type Database = {
           name: string
           price: number
           protein: number
+          serving_volume_ml: number | null
           sugar: number
+          sugar_label: string | null
+          sugar_per_100ml: number | null
+          total_lactose: number | null
+          total_sugar: number | null
         }
         Insert: {
           calories?: number
           carbs?: number
+          classification?: number | null
           created_at?: string
           created_by?: string | null
           fat?: number
@@ -248,11 +255,17 @@ export type Database = {
           name: string
           price?: number
           protein?: number
+          serving_volume_ml?: number | null
           sugar?: number
+          sugar_label?: string | null
+          sugar_per_100ml?: number | null
+          total_lactose?: number | null
+          total_sugar?: number | null
         }
         Update: {
           calories?: number
           carbs?: number
+          classification?: number | null
           created_at?: string
           created_by?: string | null
           fat?: number
@@ -261,7 +274,12 @@ export type Database = {
           name?: string
           price?: number
           protein?: number
+          serving_volume_ml?: number | null
           sugar?: number
+          sugar_label?: string | null
+          sugar_per_100ml?: number | null
+          total_lactose?: number | null
+          total_sugar?: number | null
         }
         Relationships: []
       }

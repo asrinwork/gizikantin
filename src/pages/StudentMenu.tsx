@@ -11,6 +11,7 @@ import { calcDailyTarget, getMbgCaloriesToday, getSchoolShare } from "@/lib/calo
 import { recommend } from "@/lib/recommend";
 import { formatNum, computeBMI, bmiCategory, bmiBadgeClass } from "@/lib/nutrition";
 import { Search, Plus, Minus, X, Sparkles, AlertTriangle, ShoppingCart, Loader2 } from "lucide-react";
+import { NOVA_LABELS, novaBadgeClass, sugarLabelMeta } from "@/lib/food-labels";
 import { toast } from "sonner";
 
 const rupiah = (n: number) => "Rp " + Number(n ?? 0).toLocaleString("id-ID");
@@ -171,8 +172,28 @@ const StudentMenu = () => {
                       ) : (
                         <div className="h-28 w-full bg-muted" />
                       )}
+                      {f.sugar_label && (
+                        <span
+                          className={`absolute top-1.5 left-1.5 z-10 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold shadow-sm ${sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].badgeClass}`}
+                          title={`Label ${f.sugar_label} — ${sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].name}`}
+                        >
+                          {f.sugar_label}
+                        </span>
+                      )}
                       <div className="p-3">
                         <p className="font-medium text-sm line-clamp-2">{f.name}</p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {f.classification && (
+                            <Badge variant="outline" className={`text-[10px] ${novaBadgeClass(f.classification)}`}>
+                              NOVA {f.classification}
+                            </Badge>
+                          )}
+                          {f.sugar_label && (
+                            <Badge variant="outline" className={`text-[10px] ${sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].badgeClass}`}>
+                              {sugarLabelMeta[f.sugar_label as "A"|"B"|"C"|"D"].name}
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-1">{formatNum(f.calories, 0)} kkal</p>
                         <p className="text-sm font-semibold text-primary mt-1">{rupiah(f.price)}</p>
                         {overshoot && !inCart && <Badge variant="destructive" className="mt-2 text-[10px]">Melebihi kalori</Badge>}
