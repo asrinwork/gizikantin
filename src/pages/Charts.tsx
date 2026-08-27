@@ -34,14 +34,32 @@ const Charts = () => {
 
   useEffect(() => { load(); }, [range]);
 
+  // Jumlah hari sekolah (Senin–Jumat) di dalam rentang — dipakai sebagai pembagi target
+  const schoolDays = useMemo(() => {
+    const total = range === "day" ? 1 : range === "week" ? 7 : 30;
+    let n = 0;
+    const d = new Date();
+    for (let i = 0; i < total; i++) {
+      const dow = d.getDay();
+      if (dow !== 0 && dow !== 6) n++;
+      d.setDate(d.getDate() - 1);
+    }
+    return Math.max(1, n);
+  }, [range]);
+
   // Aggregate per day
   const daily = useMemo(() => {
     const map: Record<string, number> = {};
     data.forEach((t: any) => {
-      const k = new Date(t.consumed_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+      const k = new Date(t.consumed_at).toISOString().slice(0, 10);
       map[k] = (map[k] ?? 0) + +t.quantity * (+t.foods?.calories || 0);
     });
-    return Object.entries(map).map(([date, calories]) => ({ date, calories: Math.round(calories) }));
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([iso, calories]) => ({
+        date: new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short" }),
+        calories: Math.round(calories),
+      }));
   }, [data]);
 
   // Status per student
@@ -50,9 +68,8 @@ const Charts = () => {
     data.forEach((t: any) => {
       consumedByStudent[t.student_id] = (consumedByStudent[t.student_id] ?? 0) + +t.quantity * (+t.foods?.calories || 0);
     });
-    const days = range === "day" ? 1 : range === "week" ? 7 : 30;
     return students.map((s) => {
-      const target = calcDailyTarget(s).calories * days;
+      const target = calcDailyTarget(s).calories * schoolDays;
       const consumed = consumedByStudent[s.id] ?? 0;
       const pct = (consumed / target) * 100;
       let status: "kurang" | "ideal" | "berlebih" = "ideal";
@@ -60,7 +77,8 @@ const Charts = () => {
       else if (pct > 110) status = "berlebih";
       return { student: s, consumed, target, pct, status };
     });
-  }, [data, students, range]);
+  }, [data, students, schoolDays]);
+
 
   const alerts = studentStats.filter((s) => s.status !== "ideal");
   const dist = {
